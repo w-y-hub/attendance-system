@@ -1,5 +1,6 @@
 package com.example.attendance.controller;
 import com.example.attendance.entity.*;
+import com.example.attendance.util.Result;
 import jakarta.annotation.PostConstruct;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;

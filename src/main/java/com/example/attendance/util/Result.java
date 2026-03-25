@@ -1,4 +1,4 @@
-package com.example.attendance.entity;
+package com.example.attendance.util;
 
 public class Result<T> {
     private Integer code;
