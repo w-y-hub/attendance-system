@@ -29,4 +29,20 @@ public class StudentController {
         return Result.success(student);
     }
 
+    @GetMapping
+    public List<Student> findAll() {
+        return studentService.findAll();
+    }
+
+    @PutMapping
+    public String update(@RequestBody Student student) {
+        studentService.update(student);
+        return "更新成功";
+    }
+
+    @DeleteMapping("/{studentId}")
+    public String deleteByStudentId(@PathVariable String studentId) {
+        studentService.deleteByStudentId(studentId);
+        return "删除成功";
+    }
 }

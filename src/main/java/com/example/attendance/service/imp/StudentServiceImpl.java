@@ -5,6 +5,8 @@ import com.example.attendance.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class StudentServiceImpl implements StudentService{
     @Autowired
@@ -22,5 +24,20 @@ public class StudentServiceImpl implements StudentService{
     @Override
     public Student getById(Long id) {
         return studentDao.findById(id);
+    }
+
+    @Override
+    public List<Student> findAll() {
+        return studentDao.findAll();
+    }
+
+    @Override
+    public void update(Student student) {
+        studentDao.update(student);
+    }
+
+    @Override
+    public void deleteByStudentId(String studentId) {
+        studentDao.deleteByStudentId(studentId);
     }
 }
