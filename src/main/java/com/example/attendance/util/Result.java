@@ -1,5 +1,6 @@
 package com.example.attendance.util;
 
+
 public class Result<T> {
     private Integer code;
     private String msg;
@@ -12,7 +13,7 @@ public class Result<T> {
         this.data = data;
     }
 
-    public int getCode() {
+    public Integer getCode() {
         return code;
     }
 
@@ -42,5 +43,4 @@ public class Result<T> {
     public static <T> Result<T> error(String msg){
         return new Result<>(500,msg,null);
     }
-
 }

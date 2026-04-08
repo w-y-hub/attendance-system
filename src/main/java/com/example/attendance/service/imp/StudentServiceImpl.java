@@ -19,4 +19,8 @@ public class StudentServiceImpl implements StudentService{
         return "创建成功";
     }
 
+    @Override
+    public Student getById(Long id) {
+        return studentDao.findById(id);
+    }
 }

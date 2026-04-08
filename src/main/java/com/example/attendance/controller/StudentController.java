@@ -20,5 +20,13 @@ public class StudentController {
         return Result.success(studentService.addStudent(student));
     }
 
+    @GetMapping("/{id}")
+    public Result<Student> getById(@PathVariable Long id) {
+        Student student = studentService.getById(id);
+        if (student == null) {
+            return Result.error("学生不存在");
+        }
+        return Result.success(student);
+    }
 
 }
