@@ -1,35 +1,63 @@
 package com.example.attendance.entity;
 
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "student")
 public class Student {
-    private String studentId;
-    private String studentName;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // 学号
+    @Column(name = "student_no", nullable = false, unique = true, length = 50)
+    private String studentNo;
+
+    // 姓名
+    @Column(name = "name", nullable = false, length = 50)
+    private String name;
+
+    // 班级
+    @Column(name = "class_name", length = 50)
     private String className;
-    private Integer age;
+
+    // 状态：1正常，0禁用等
+    @Column(name = "status")
+    private Integer status;
+
+    @Column(name = "create_time")
+    private LocalDateTime createTime;
+
+    @Column(name = "update_time")
+    private LocalDateTime updateTime;
 
     public Student() {
     }
 
-    public Student(String studentId, String studentName, String className, Integer age) {
-        this.studentId = studentId;
-        this.studentName = studentName;
-        this.className = className;
-        this.age = age;
+    public Long getId() {
+        return id;
     }
 
-    public String getStudentId() {
-        return studentId;
+    public String getStudentNo() {
+        return studentNo;
     }
 
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
+    public void setStudentNo(String studentNo) {
+        this.studentNo = studentNo;
     }
 
-    public String getStudentName() {
-        return studentName;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public void setStudentName(String studentName) {
-        this.studentName = studentName;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getClassName() {
@@ -40,11 +68,27 @@ public class Student {
         this.className = className;
     }
 
-    public Integer getAge() {
-        return age;
+    public Integer getStatus() {
+        return status;
     }
 
-    public void setAge(Integer age) {
-        this.age = age;
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(LocalDateTime createTime) {
+        this.createTime = createTime;
+    }
+
+    public LocalDateTime getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(LocalDateTime updateTime) {
+        this.updateTime = updateTime;
     }
 }
