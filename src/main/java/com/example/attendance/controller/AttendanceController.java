@@ -1,7 +1,7 @@
 package com.example.attendance.controller;
 
 import com.example.attendance.entity.Attendance;
-import com.example.attendance.repositroy.AttendanceRepository;
+import com.example.attendance.repository.AttendanceRepository;
 import com.example.attendance.util.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;

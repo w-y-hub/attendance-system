@@ -1,6 +1,6 @@
 package com.example.attendance.service;
 import com.example.attendance.entity.Student;
-import com.example.attendance.repositroy.StudentRepository;
+import com.example.attendance.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

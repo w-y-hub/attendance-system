@@ -1,4 +1,4 @@
-package com.example.attendance.repositroy;
+package com.example.attendance.repository;
 
 import com.example.attendance.entity.Attendance;
 import org.springframework.data.jpa.repository.JpaRepository;
