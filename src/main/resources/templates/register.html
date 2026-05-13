@@ -1,54 +1,32 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>注册</title>
+    <title th:text="${title}">注册</title>
 </head>
 <body>
-<h2>用户注册</h2>
+<h1 th:text="${title}">用户注册</h1>
 
-<form id="registerForm">
+<p th:if="${errorMsg}" th:text="${errorMsg}" style="color:red;"></p>
+
+<form action="/register" method="post">
     <div>
         <label>用户名：</label>
-        <input type="text" id="username" required>
+        <input type="text" name="username" th:value="${username}" required>
     </div>
     <div>
         <label>密码：</label>
-        <input type="password" id="password" required>
+        <input type="password" name="password" required>
     </div>
     <div>
-        <label>角色：</label>
-        <select id="role">
-            <option value="STUDENT">学生</option>
-            <option value="TEACHER">教师</option>
-            <option value="ADMIN">管理员</option>
-        </select>
+        <label>确认密码：</label>
+        <input type="password" name="confirmPassword" required>
     </div>
     <div>
-        <button type="button" onclick="submitRegister()">注册</button>
+        <button type="submit">注册</button>
     </div>
 </form>
 
-<script>
-    async function submitRegister() {
-        const data = {
-            username: document.getElementById("username").value,
-            password: document.getElementById("password").value,
-            role: document.getElementById("role").value
-        };
-
-        const response = await fetch('/register', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-        alert(result.message || '注册成功');
-        window.location.href = '/login';
-    }
-</script>
+<p><a th:href="@{/login}">返回登录</a></p>
 </body>
 </html>

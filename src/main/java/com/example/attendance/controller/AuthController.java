@@ -7,24 +7,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-@Controller
+@Controller // 注意：保持为 @Controller
 public class AuthController {
 
     @Autowired
     private UserService userService;
 
-    @GetMapping("/login")
-    public String loginPage() {
-        return "login";
-    }
-
-    @GetMapping("/register")
-    public String registerPage() {
-        return "register";
-    }
+    // 删除了 @GetMapping("/login") 和 @GetMapping("/register") 页面路由
 
     @PostMapping("/register")
-    @ResponseBody
+    @ResponseBody // 关键：这一行保证返回的是 JSON 而不是视图
     public Result register(@RequestBody User user) {
         userService.register(user);
         return Result.success("注册成功");
