@@ -9,7 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface StudentRepository extends JpaRepository<Student, Long> ,JpaSpecificationExecutor<Student>,
+public interface StudentRepository extends JpaRepository<Student, Long>,
+        JpaSpecificationExecutor<Student>,
         QueryByExampleExecutor<Student> {
 
     // 根据学号查询
@@ -17,4 +18,7 @@ public interface StudentRepository extends JpaRepository<Student, Long> ,JpaSpec
 
     // 根据班级查询
     List<Student> findByClassName(String className);
+
+    // 判断学号是否存在
+    boolean existsByStudentNo(String studentNo);
 }
