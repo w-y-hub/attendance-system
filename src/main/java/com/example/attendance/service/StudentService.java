@@ -71,4 +71,7 @@ public class StudentService {
     public boolean existsByStudentNo(String studentNo) {
         return studentRepository.existsByStudentNo(studentNo);
     }
+    public Student findByStudentNo(String studentNo) {
+        return studentRepository.findByStudentNo(studentNo);
+    }
 }

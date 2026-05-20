@@ -21,4 +21,5 @@ public interface StudentRepository extends JpaRepository<Student, Long>,
 
     // 判断学号是否存在
     boolean existsByStudentNo(String studentNo);
+
 }

@@ -2,29 +2,544 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${title}">登录</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title}">用户登录</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #7c3aed;
+            --success-bg: #ecfdf3;
+            --success-border: #bbf7d0;
+            --success-text: #15803d;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --error-text: #b91c1c;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #d1d5db;
+            --input-bg: rgba(255, 255, 255, 0.92);
+            --card-bg: rgba(255, 255, 255, 0.18);
+            --shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            background:
+                    radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 28%),
+                    radial-gradient(circle at bottom right, rgba(255,255,255,0.12), transparent 30%),
+                    linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+        }
+
+        .background-shape {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(10px);
+            opacity: 0.22;
+            z-index: 0;
+        }
+
+        .shape1 {
+            width: 260px;
+            height: 260px;
+            background: #ffffff;
+            top: -60px;
+            left: -40px;
+        }
+
+        .shape2 {
+            width: 300px;
+            height: 300px;
+            background: #c4b5fd;
+            bottom: -80px;
+            right: -50px;
+        }
+
+        .login-shell {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1060px;
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            border-radius: 26px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.22);
+            backdrop-filter: blur(14px);
+        }
+
+        .login-left {
+            padding: 56px 48px;
+            color: white;
+            position: relative;
+            background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+        }
+
+        .brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.18);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .brand-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 0 12px rgba(255,255,255,0.85);
+        }
+
+        .system-title {
+            margin: 0 0 16px;
+            font-size: 40px;
+            line-height: 1.2;
+            font-weight: 800;
+        }
+
+        .system-desc {
+            margin: 0;
+            max-width: 440px;
+            line-height: 1.9;
+            color: rgba(255,255,255,0.88);
+            font-size: 15px;
+        }
+
+        .feature-list {
+            margin-top: 36px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .feature-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.18);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .feature-text h4 {
+            margin: 2px 0 6px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .feature-text p {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .login-right {
+            background: rgba(255, 255, 255, 0.94);
+            padding: 48px 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-panel {
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .panel-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .panel-logo {
+            width: 74px;
+            height: 74px;
+            margin: 0 auto 16px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 800;
+            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.28);
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: 28px;
+            color: var(--text-main);
+            font-weight: 800;
+        }
+
+        .panel-subtitle {
+            margin: 10px 0 0;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            border: 1px solid transparent;
+        }
+
+        .alert-error {
+            background: var(--error-bg);
+            border-color: var(--error-border);
+            color: var(--error-text);
+        }
+
+        .alert-success {
+            background: var(--success-bg);
+            border-color: var(--success-border);
+            color: var(--success-text);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 16px;
+            pointer-events: none;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 50px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            outline: none;
+            padding: 0 14px 0 42px;
+            font-size: 15px;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+            background: #fff;
+        }
+
+        .password-input {
+            padding-right: 88px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 6px 8px;
+            border-radius: 8px;
+        }
+
+        .toggle-password:hover {
+            background: rgba(79, 70, 229, 0.08);
+            color: var(--primary-dark);
+        }
+
+        .form-tools {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 4px 0 22px;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #4b5563;
+            user-select: none;
+        }
+
+        .remember-me input {
+            accent-color: var(--primary);
+        }
+
+        .tool-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .tool-link:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 52px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: transform 0.16s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            box-shadow: 0 12px 28px rgba(79, 70, 229, 0.28);
+        }
+
+        .login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 34px rgba(79, 70, 229, 0.34);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .bottom-text {
+            text-align: center;
+            margin-top: 22px;
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        .bottom-text a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .bottom-text a:hover {
+            text-decoration: underline;
+        }
+
+        .copyright {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 900px) {
+            .login-shell {
+                grid-template-columns: 1fr;
+                max-width: 460px;
+            }
+
+            .login-left {
+                display: none;
+            }
+
+            .login-right {
+                padding: 34px 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 14px;
+            }
+
+            .login-shell {
+                border-radius: 20px;
+            }
+
+            .panel-title {
+                font-size: 24px;
+            }
+
+            .form-tools {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
-<h1 th:text="${title}">用户登录</h1>
+<div class="background-shape shape1"></div>
+<div class="background-shape shape2"></div>
 
-<p th:if="${param.error}" style="color:red;">用户名或密码错误</p>
-<p th:if="${param.logout}" style="color:green;">退出成功</p>
-<p th:if="${param.registerSuccess}" style="color:green;">注册成功，请登录</p>
+<div class="login-shell">
+    <div class="login-left">
+        <div class="brand-badge">
+            <span class="brand-dot"></span>
+            <span>Attendance System</span>
+        </div>
 
-<form action="/doLogin" method="post">
-    <div>
-        <label>用户名：</label>
-        <input type="text" name="username" required>
-    </div>
-    <div>
-        <label>密码：</label>
-        <input type="password" name="password" required>
-    </div>
-    <div>
-        <button type="submit">登录</button>
-    </div>
-</form>
+        <h1 class="system-title">教务考勤管理平台</h1>
+        <p class="system-desc">
+            统一管理课程签到、考勤记录与教学数据，帮助学生、教师和管理员更高效地完成日常考勤工作。
+        </p>
 
-<p><a th:href="@{/register}">去注册</a></p>
+        <div class="feature-list">
+            <div class="feature-item">
+                <div class="feature-icon">✓</div>
+                <div class="feature-text">
+                    <h4>快速打卡</h4>
+                    <p>支持课程签到与记录追踪，提升考勤效率。</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📋</div>
+                <div class="feature-text">
+                    <h4>记录查询</h4>
+                    <p>清晰查看历史考勤数据，便于核对与统计。</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <div class="feature-text">
+                    <h4>模块扩展</h4>
+                    <p>可平滑接入课程管理、报表分析与后台功能。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-right">
+        <div class="form-panel">
+            <div class="panel-header">
+                <div class="panel-logo">登</div>
+                <h2 class="panel-title" th:text="${title}">用户登录</h2>
+                <p class="panel-subtitle">请输入账号信息后进入系统首页</p>
+            </div>
+
+            <div th:if="${param.error}" class="alert alert-error">
+                用户名或密码错误，请重新输入
+            </div>
+
+            <div th:if="${param.logout}" class="alert alert-success">
+                退出成功，欢迎下次使用
+            </div>
+
+            <div th:if="${param.registerSuccess}" class="alert alert-success">
+                注册成功，请使用新账号登录
+            </div>
+
+            <form th:action="@{/doLogin}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">👤</span>
+                        <input class="form-input"
+                               type="text"
+                               name="username"
+                               placeholder="请输入用户名"
+                               required
+                               autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">密码</label>
+                    <div class="input-wrap">
+                        <span class="input-icon">🔒</span>
+                        <input class="form-input password-input"
+                               type="password"
+                               name="password"
+                               id="password"
+                               placeholder="请输入密码"
+                               required>
+                        <button type="button" class="toggle-password" onclick="togglePassword()">显示</button>
+                    </div>
+                </div>
+
+                <div class="form-tools">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember-me">
+                        <span>记住我</span>
+                    </label>
+                    <a href="#" class="tool-link" onclick="alert('如需找回密码，请联系管理员。'); return false;">忘记密码？</a>
+                </div>
+
+                <button type="submit" class="login-btn">立即登录</button>
+            </form>
+
+            <div class="bottom-text">
+                还没有账号？
+                <a th:href="@{/register}">立即注册</a>
+            </div>
+
+            <div class="copyright">
+                © 2025 Attendance System
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword() {
+        const passwordInput = document.getElementById('password');
+        const toggleBtn = document.querySelector('.toggle-password');
+
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleBtn.textContent = '隐藏';
+        } else {
+            passwordInput.type = 'password';
+            toggleBtn.textContent = '显示';
+        }
+    }
+</script>
 </body>
 </html>
