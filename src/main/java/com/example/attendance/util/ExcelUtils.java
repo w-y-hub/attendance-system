@@ -4,28 +4,28 @@ import org.apache.poi.ss.usermodel.*;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 /**
- * 这是在干什么：
- * 这个工具类用于统一处理 Excel 单元格读取。
- *
- * 如何实现：
- * Apache POI 的单元格类型可能是字符串、数字、日期、布尔值等，
- * 我们在这里封装通用读取逻辑，避免在业务代码里写很多重复判断。
+ * Excel 单元格读取工具类
  */
 public class ExcelUtils {
 
+    /** 支持的日期格式列表（按优先级） */
+    private static final List<DateTimeFormatter> DATE_FORMATTERS = Arrays.asList(
+            DateTimeFormatter.ISO_LOCAL_DATE,                    // 2025-05-20
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),           // 2025/05/20
+            DateTimeFormatter.ofPattern("yyyyMMdd"),              // 20250520
+            DateTimeFormatter.ofPattern("yyyy.MM.dd"),           // 2025.05.20
+            DateTimeFormatter.ofPattern("yyyy年MM月dd日")        // 2025年05月20日
+    );
+
     /**
-     * 这是在干什么：
-     * 读取单元格内容，并统一转成字符串。
-     *
-     * 如何实现：
-     * 根据单元格类型做不同处理：
-     * - STRING：直接读字符串
-     * - NUMERIC：判断是否为日期，否则转成数字字符串
-     * - BOOLEAN：转成 true/false
-     * - FORMULA：优先按公式结果读取
+     * 读取单元格内容，并统一转成字符串
      */
     public static String getCellStringValue(Cell cell) {
         if (cell == null) {
@@ -46,7 +46,6 @@ public class ExcelUtils {
                             .toLocalDate();
                     return localDate.toString();
                 } else {
-                    // 防止学号、手机号被读成 1.0 这种格式
                     double value = cell.getNumericCellValue();
                     long longValue = (long) value;
                     if (value == longValue) {
@@ -81,12 +80,7 @@ public class ExcelUtils {
     }
 
     /**
-     * 这是在干什么：
-     * 读取 Excel 日期单元格并转为 LocalDate。
-     *
-     * 如何实现：
-     * 如果单元格本身是 Excel 日期格式，就直接转换；
-     * 如果是字符串，就尝试用 LocalDate.parse 解析。
+     * 读取 Excel 日期单元格并转为 LocalDate
      */
     public static LocalDate getCellLocalDateValue(Cell cell) {
         if (cell == null) {
@@ -106,9 +100,41 @@ public class ExcelUtils {
                 return null;
             }
 
-            return LocalDate.parse(text.trim());
+            return parseDateFlexible(text.trim());
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * 灵活解析日期字符串，支持多种格式
+     *
+     * 【重要说明】
+     * 这里不抛异常，而是返回 null。为什么？
+     * 调用方通常只需要知道"能不能解析"，
+     * 如果抛异常，调用方就得 try-catch，代码啰嗦。
+     * 返回 null 后，调用方直接 if (result == null) 处理即可。
+     *
+     * @param dateStr 日期字符串
+     * @return 解析成功返回 LocalDate，失败返回 null
+     */
+    public static LocalDate parseDateFlexible(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return null;
+        }
+
+        String trimmed = dateStr.trim();
+
+        // 依次尝试每个日期格式，成功就返回
+        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
+            try {
+                return LocalDate.parse(trimmed, formatter);
+            } catch (DateTimeParseException ignored) {
+                // 这个格式不行，试下一个
+            }
+        }
+
+        // 所有格式都解析失败，返回 null 而不是抛异常
+        return null;
     }
 }

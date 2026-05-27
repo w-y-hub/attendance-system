@@ -1,50 +1,86 @@
 <!DOCTYPE html>
+<!--
+  student-list.html —— 学生列表页
+
+  【Thymeleaf 基础】
+  xmlns:th="http://www.thymeleaf.org" 声明了 Thymeleaf 的命名空间，
+  有了它才能用 th:text、th:each 这些标签属性。
+
+  th:replace="~{fragments/common :: head('学生列表')}"
+  表示用 fragments/common.html 里的 head 片段替换当前 head 标签。
+  "~{...}" 是 Thymeleaf 的"片段表达式"，有点像 Java 里引用另一个类的方法。
+-->
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>学生列表</title>
-    <link rel="stylesheet"
-          th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
-</head>
+<head th:replace="~{fragments/common :: head('学生列表')}"></head>
 <body>
-<div class="container mt-4">
-    <h2>学生列表</h2>
+<!-- 导航栏（从 common.html 引入） -->
+<div th:replace="~{fragments/common :: navbar}"></div>
 
-    <a th:href="@{/student/add}" class="btn btn-success mb-3">新增学生</a>
+<div class="page-shell">
+    <div class="container">
+        <div class="card">
+            <!-- 卡片头部：标题 + 操作按钮 -->
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>📋 学生列表</span>
+                <div style="display:flex;gap:10px;">
+                    <a th:href="@{/student/add}" class="btn btn-success">➕ 新增学生</a>
+                    <a th:href="@{/student/import}" class="btn btn-info">📥 导入学生</a>
+                </div>
+            </div>
 
-    <table class="table table-striped table-hover">
-        <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>学号</th>
-            <th>姓名</th>
-            <th>班级</th>
-            <th>性别</th>
-            <th>出生日期</th>
-            <th>手机号</th>
-            <th>邮箱</th>
-            <th>状态</th>
-            <th>操作</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="student : ${students}">
-            <td th:text="${student.id}">1</td>
-            <td th:text="${student.studentNo}">2023001</td>
-            <td th:text="${student.name}">张三</td>
-            <td th:text="${student.className}">软件工程1班</td>
-            <td th:text="${student.gender}">男</td>
-            <td th:text="${student.birthDate}">2003-01-01</td>
-            <td th:text="${student.phone}">13800000000</td>
-            <td th:text="${student.email}">test@example.com</td>
-            <td th:text="${student.status == 1 ? '正常' : '禁用'}">正常</td>
-            <td>
-                <a class="btn btn-sm btn-info"
-                   th:href="@{/student/edit/{id}(id=${student.id})}">编辑</a>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            <!--
+              th:each="student : ${students}"
+              这是 Thymeleaf 的循环语法——遍历 controller 传到 Model 的 students 列表。
+              student 是循环变量，类似于 Java 的 for (Student student : students)。
+            -->
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>学号</th>
+                        <th>姓名</th>
+                        <th>性别</th>
+                        <th>学院</th>
+                        <th>年级</th>
+                        <th>专业</th>
+                        <th>班级</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="student : ${students}">
+                        <!-- th:text="${student.studentNo}" 等价于 student.getStudentNo() -->
+                        <td th:text="${student.studentNo}">42211077</td>
+                        <td><strong th:text="${student.name}">孙涛涛</strong></td>
+                        <td th:text="${student.gender}">男</td>
+                        <td th:text="${student.college}">计算机与人工智能学院</td>
+                        <td th:text="${student.grade}">2022</td>
+                        <td th:text="${student.major}">计算机科学与技术</td>
+                        <td th:text="${student.className}">2022级计算机科学与技术</td>
+                        <td>
+                            <!-- 三元表达式：status == 1 显示"正常"，否则显示"禁用" -->
+                            <span th:if="${student.status == 1}" class="badge badge-success">正常</span>
+                            <span th:if="${student.status != 1}" class="badge badge-danger">禁用</span>
+                        </td>
+                        <td>
+                            <a class="btn btn-primary btn-sm" style="padding:4px 12px;font-size:12px;"
+                               th:href="@{/student/edit/{id}(id=${student.id})}">编辑</a>
+                        </td>
+                    </tr>
+                    <!-- 如果列表为空，显示提示 -->
+                    <tr th:if="${#lists.isEmpty(students)}">
+                        <td colspan="9" style="text-align:center;color:var(--text-sub);padding:40px;">
+                            暂无学生数据，请先「新增学生」或「导入学生」
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
 </body>
 </html>

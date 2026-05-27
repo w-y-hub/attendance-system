@@ -2,31 +2,46 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title th:text="${title}">注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
-<h1 th:text="${title}">用户注册</h1>
-
-<p th:if="${errorMsg}" th:text="${errorMsg}" style="color:red;"></p>
-
-<form action="/register" method="post">
-    <div>
-        <label>用户名：</label>
-        <input type="text" name="username" th:value="${username}" required>
+<body class="page-auth">
+<div class="background-shape shape1"></div>
+<div class="background-shape shape2"></div>
+<div class="auth-card">
+    <div class="auth-left">
+        <div class="auth-icon">📋</div>
+        <h1>考勤管理系统</h1>
+        <p class="auth-desc">创建新账号以开始使用考勤管理系统。</p>
+        <div class="auth-features">
+            <span>✅ 在线打卡签到</span>
+            <span>📊 多维度统计报表</span>
+            <span>📥 Excel 批量导入</span>
+        </div>
     </div>
-    <div>
-        <label>密码：</label>
-        <input type="password" name="password" required>
+    <div class="auth-right">
+        <h2 class="auth-title">创建账号</h2>
+        <p class="auth-subtitle">请填写以下信息完成注册</p>
+        <div th:if="${errorMsg}" class="error-message" th:text="${errorMsg}">⚠ 错误信息</div>
+        <form th:action="@{/register}" method="post">
+            <div class="form-group">
+                <label class="form-label" for="username">用户名</label>
+                <input id="username" name="username" type="text" class="form-input" th:value="${username}" placeholder="请输入用户名（将作为学号登录）" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="password">密码</label>
+                <input id="password" name="password" type="password" class="form-input" placeholder="至少4位" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="confirmPassword">确认密码</label>
+                <input id="confirmPassword" name="confirmPassword" type="password" class="form-input" placeholder="再次输入密码" required>
+            </div>
+            <button type="submit" class="login-btn">立即注册</button>
+        </form>
+        <div class="bottom-text">已有账号？<a th:href="@{/login}">立即登录</a></div>
+        <div class="copyright" style="color:var(--text-light);">&copy; 2025 Attendance System</div>
     </div>
-    <div>
-        <label>确认密码：</label>
-        <input type="password" name="confirmPassword" required>
-    </div>
-    <div>
-        <button type="submit">注册</button>
-    </div>
-</form>
-
-<p><a th:href="@{/login}">返回登录</a></p>
+</div>
 </body>
 </html>

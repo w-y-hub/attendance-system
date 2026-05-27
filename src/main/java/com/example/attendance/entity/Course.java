@@ -38,7 +38,7 @@ public class Course {
         }
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 

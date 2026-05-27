@@ -3,6 +3,7 @@ package com.example.attendance.repository;
 import com.example.attendance.entity.Attendance;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.Collection;
@@ -13,15 +14,24 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, J
 
     Optional<Attendance> findByStudentNoAndCourseIdAndAttendanceDate(String studentNo, Long courseId, LocalDate attendanceDate);
 
-    // 查询某学生在某日期范围内的考勤记录
     List<Attendance> findByStudentNoAndAttendanceDateBetween(String studentNo, LocalDate startDate, LocalDate endDate);
 
-    // 统计某学生在某日期范围内的总记录数
     long countByStudentNoAndAttendanceDateBetween(String studentNo, LocalDate startDate, LocalDate endDate);
 
-    // 统计某学生在某日期范围内、单个状态的记录数
     long countByStudentNoAndAttendanceDateBetweenAndStatus(String studentNo, LocalDate startDate, LocalDate endDate, String status);
 
-    // 统计某学生在某日期范围内、多个状态的记录数
     long countByStudentNoAndAttendanceDateBetweenAndStatusIn(String studentNo, LocalDate startDate, LocalDate endDate, Collection<String> statuses);
+
+    // ========== 班级级统计 ==========
+
+    List<Attendance> findByClassNameAndAttendanceDateBetween(String className, LocalDate startDate, LocalDate endDate);
+
+    long countByClassNameAndAttendanceDateBetween(String className, LocalDate startDate, LocalDate endDate);
+
+    long countByClassNameAndAttendanceDateBetweenAndStatus(String className, LocalDate startDate, LocalDate endDate, String status);
+
+    long countByClassNameAndAttendanceDateBetweenAndStatusIn(String className, LocalDate startDate, LocalDate endDate, Collection<String> statuses);
+
+    @Query("SELECT DISTINCT a.className FROM Attendance a WHERE a.className IS NOT NULL")
+    List<String> findDistinctClassNameBy();
 }

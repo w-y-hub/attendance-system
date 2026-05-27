@@ -1,503 +1,70 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>考勤打卡</title>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-dark: #4338ca;
-            --secondary: #7c3aed;
-            --bg-start: #667eea;
-            --bg-end: #764ba2;
-            --text-main: #1f2937;
-            --text-sub: #6b7280;
-            --border: #d1d5db;
-            --card-bg: rgba(255, 255, 255, 0.94);
-            --glass-bg: rgba(255, 255, 255, 0.12);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            --success-bg: #ecfdf3;
-            --success-border: #bbf7d0;
-            --success-text: #15803d;
-            --error-bg: #fef2f2;
-            --error-border: #fecaca;
-            --error-text: #b91c1c;
-            --warning-bg: #fff7ed;
-            --warning-border: #fed7aa;
-            --warning-text: #c2410c;
-            --shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-            min-height: 100vh;
-            background:
-                    radial-gradient(circle at top left, rgba(255,255,255,0.18), transparent 26%),
-                    radial-gradient(circle at bottom right, rgba(255,255,255,0.12), transparent 30%),
-                    linear-gradient(135deg, var(--bg-start), var(--bg-end));
-            color: var(--text-main);
-        }
-
-        .page-shell {
-            min-height: 100vh;
-            padding: 28px 20px 40px;
-        }
-
-        .background-shape {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(12px);
-            opacity: 0.2;
-            z-index: 0;
-        }
-
-        .shape1 {
-            width: 260px;
-            height: 260px;
-            background: #ffffff;
-            top: -60px;
-            left: -40px;
-        }
-
-        .shape2 {
-            width: 320px;
-            height: 320px;
-            background: #c4b5fd;
-            right: -70px;
-            bottom: -80px;
-        }
-
-        .content {
-            position: relative;
-            z-index: 1;
-            max-width: 1180px;
-            margin: 0 auto;
-        }
-
-        .top-space {
-            margin-bottom: 20px;
-        }
-
-        .hero-card {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 20px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 26px;
-            padding: 28px;
-            backdrop-filter: blur(14px);
-            box-shadow: var(--shadow);
-            color: white;
-            margin-bottom: 22px;
-        }
-
-        .hero-left h1 {
-            margin: 0 0 14px;
-            font-size: 34px;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-
-        .hero-left p {
-            margin: 0;
-            font-size: 15px;
-            line-height: 1.9;
-            color: rgba(255,255,255,0.88);
-            max-width: 680px;
-        }
-
-        .hero-badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 22px;
-        }
-
-        .badge-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            border-radius: 999px;
-            background: rgba(255,255,255,0.14);
-            border: 1px solid rgba(255,255,255,0.18);
-            font-size: 13px;
-        }
-
-        .hero-right {
-            display: flex;
-            align-items: stretch;
-        }
-
-        .stats-card {
-            width: 100%;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.16);
-            border-radius: 22px;
-            padding: 22px;
-            display: grid;
-            gap: 16px;
-        }
-
-        .stats-item {
-            padding: 14px 16px;
-            border-radius: 16px;
-            background: rgba(255,255,255,0.1);
-        }
-
-        .stats-label {
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 8px;
-        }
-
-        .stats-value {
-            font-size: 24px;
-            font-weight: 800;
-            color: white;
-        }
-
-        .alert {
-            border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 18px;
-            font-size: 14px;
-            border: 1px solid transparent;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-        }
-
-        .alert-success {
-            background: var(--success-bg);
-            border-color: var(--success-border);
-            color: var(--success-text);
-        }
-
-        .alert-error {
-            background: var(--error-bg);
-            border-color: var(--error-border);
-            color: var(--error-text);
-        }
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 22px;
-        }
-
-        .panel {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 26px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.55);
-        }
-
-        .panel-header {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 20px;
-        }
-
-        .panel-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 22px;
-            font-weight: bold;
-            box-shadow: 0 12px 28px rgba(79, 70, 229, 0.22);
-        }
-
-        .icon-checkin {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-        }
-
-        .icon-checkout {
-            background: linear-gradient(135deg, #f59e0b, #ea580c);
-        }
-
-        .panel-title {
-            margin: 0;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-
-        .panel-subtitle {
-            margin: 6px 0 0;
-            color: var(--text-sub);
-            font-size: 14px;
-        }
-
-        .form-group {
-            margin-bottom: 18px;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 700;
-            color: #374151;
-        }
-
-        .form-select,
-        .form-textarea {
-            width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            font-size: 15px;
-            padding: 12px 14px;
-            outline: none;
-            transition: all 0.2s ease;
-            background: #fff;
-            color: var(--text-main);
-        }
-
-        .form-select {
-            height: 50px;
-        }
-
-        .form-textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        .form-select:focus,
-        .form-textarea:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
-        }
-
-        .btn {
-            width: 100%;
-            height: 50px;
-            border: none;
-            border-radius: 14px;
-            font-size: 15px;
-            font-weight: 800;
-            color: white;
-            cursor: pointer;
-            transition: transform 0.16s ease, box-shadow 0.2s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-checkin {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            box-shadow: 0 12px 28px rgba(79, 70, 229, 0.24);
-        }
-
-        .btn-checkin:hover {
-            box-shadow: 0 16px 34px rgba(79, 70, 229, 0.3);
-        }
-
-        .btn-checkout {
-            background: linear-gradient(135deg, #f59e0b, #ea580c);
-            box-shadow: 0 12px 28px rgba(234, 88, 12, 0.22);
-        }
-
-        .btn-checkout:hover {
-            box-shadow: 0 16px 34px rgba(234, 88, 12, 0.3);
-        }
-
-        .tips-card {
-            margin-top: 22px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 22px;
-            padding: 22px 24px;
-            box-shadow: var(--shadow);
-        }
-
-        .tips-title {
-            margin: 0 0 14px;
-            font-size: 20px;
-            font-weight: 800;
-            color: var(--text-main);
-        }
-
-        .tips-list {
-            margin: 0;
-            padding-left: 18px;
-            color: var(--text-sub);
-            line-height: 1.9;
-            font-size: 14px;
-        }
-
-        .section-note {
-            margin-top: 14px;
-            padding: 12px 14px;
-            border-radius: 14px;
-            background: #f8fafc;
-            color: #64748b;
-            font-size: 13px;
-            line-height: 1.7;
-        }
-
-        @media (max-width: 992px) {
-            .hero-card {
-                grid-template-columns: 1fr;
-            }
-
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        @media (max-width: 576px) {
-            .page-shell {
-                padding: 18px 14px 30px;
-            }
-
-            .hero-card,
-            .panel,
-            .tips-card {
-                border-radius: 20px;
-                padding: 20px;
-            }
-
-            .hero-left h1 {
-                font-size: 28px;
-            }
-
-            .panel-title {
-                font-size: 22px;
-            }
-        }
-    </style>
-</head>
-<body>
+<head th:replace="~{fragments/common :: head('考勤打卡')}"></head>
+<body class="gradient-bg">
 <div class="background-shape shape1"></div>
 <div class="background-shape shape2"></div>
 
-<div class="page-shell">
-    <div class="content">
-        <div class="top-space" th:replace="~{fragments/navbar :: navbar}"></div>
+<div th:replace="~{fragments/common :: navbar}" style="position:relative;z-index:2;"></div>
 
-        <div class="hero-card">
-            <div class="hero-left">
-                <h1>考勤打卡中心</h1>
-                <p>
-                    在这里可以快速完成课程签到与签退操作。系统将根据课程信息记录你的考勤状态，
-                    帮助你更便捷地管理日常出勤数据。
-                </p>
+<div class="page-shell" style="position:relative;z-index:1;">
+    <div class="container checkin-shell">
+        <!-- 提示消息 -->
+        <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+        <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
 
-                <div class="hero-badges">
-                    <div class="badge-item">📍 快速签到</div>
-                    <div class="badge-item">🕒 自动记录时间</div>
-                    <div class="badge-item">📘 课程统一管理</div>
-                </div>
-            </div>
-
-            <div class="hero-right">
-                <div class="stats-card">
-                    <div class="stats-item">
-                        <div class="stats-label">当前可选课程数</div>
-                        <div class="stats-value" th:text="${courses != null ? #lists.size(courses) : 0}">0</div>
-                    </div>
-                    <div class="stats-item">
-                        <div class="stats-label">操作类型</div>
-                        <div class="stats-value" style="font-size: 18px;">签到 / 签退</div>
-                    </div>
-                    <div class="stats-item">
-                        <div class="stats-label">系统状态</div>
-                        <div class="stats-value" style="font-size: 18px;">运行正常</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div th:if="${success != null and success != ''}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error != null and error != ''}" class="alert alert-error" th:text="${error}"></div>
-
-        <div class="main-grid">
-            <div class="panel">
+        <div class="checkin-grid">
+            <!-- 签到面板 -->
+            <div class="checkin-panel">
                 <div class="panel-header">
-                    <div class="panel-icon icon-checkin">✓</div>
-                    <div>
-                        <h2 class="panel-title">课程签到</h2>
-                        <p class="panel-subtitle">选择课程并填写备注后完成签到</p>
-                    </div>
+                    <div class="panel-title">✅ 签到</div>
+                    <p class="panel-subtitle">选择课程完成签到（上课前15分钟到上课后30分钟内有效）</p>
                 </div>
-
                 <form th:action="@{/attendance/checkIn}" method="post">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
                     <div class="form-group">
                         <label class="form-label">选择课程</label>
-                        <select name="courseId" class="form-select" required>
+                        <select name="courseId" class="form-input" required>
                             <option value="">请选择课程</option>
                             <option th:each="course : ${courses}"
                                     th:value="${course.id}"
-                                    th:text="${course.courseName + '（' + course.startTime + ' - ' + course.endTime + '）'}">
-                            </option>
+                                    th:text="${course.courseName + ' (' + course.startTime + ' - ' + course.endTime + ')'}"></option>
                         </select>
                     </div>
-
                     <div class="form-group">
-                        <label class="form-label">备注信息</label>
-                        <textarea name="remark" class="form-textarea" rows="4" placeholder="可填写签到说明、特殊情况等内容"></textarea>
+                        <label class="form-label">备注（可选）</label>
+                        <input type="text" name="remark" class="form-input" placeholder="如：正常到课">
                     </div>
-
-                    <button type="submit" class="btn btn-checkin">立即签到</button>
+                    <button type="submit" class="btn-checkin">立即签到</button>
                 </form>
-
-                <div class="section-note">
-                    提示：请确认已选择正确课程后再提交，签到成功后系统会自动记录签到时间。
-                </div>
             </div>
 
-            <div class="panel">
+            <!-- 签退面板 -->
+            <div class="checkin-panel">
                 <div class="panel-header">
-                    <div class="panel-icon icon-checkout">⇄</div>
-                    <div>
-                        <h2 class="panel-title">课程签退</h2>
-                        <p class="panel-subtitle">完成课程后可在此提交签退操作</p>
-                    </div>
+                    <div class="panel-title">⬅ 签退</div>
+                    <p class="panel-subtitle">完成课程后在此签退</p>
                 </div>
-
                 <form th:action="@{/attendance/checkOut}" method="post">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-
                     <div class="form-group">
                         <label class="form-label">选择课程</label>
-                        <select name="courseId" class="form-select" required>
+                        <select name="courseId" class="form-input" required>
                             <option value="">请选择课程</option>
                             <option th:each="course : ${courses}"
                                     th:value="${course.id}"
-                                    th:text="${course.courseName + '（' + course.startTime + ' - ' + course.endTime + '）'}">
-                            </option>
+                                    th:text="${course.courseName + ' (' + course.startTime + ' - ' + course.endTime + ')'}"></option>
                         </select>
                     </div>
-
-                    <button type="submit" class="btn btn-checkout">立即签退</button>
+                    <button type="submit" class="btn-checkout">立即签退</button>
                 </form>
-
-                <div class="section-note">
-                    提示：签退前请确认课程已结束，提交后系统会自动记录签退时间。
-                </div>
+                <div class="section-note">提示：签退前请确认课程已结束，提交后系统会自动记录签退时间。</div>
             </div>
         </div>
 
+        <!-- 操作说明 -->
         <div class="tips-card">
-            <h3 class="tips-title">操作说明</h3>
+            <h3 class="tips-title">📌 操作说明</h3>
             <ul class="tips-list">
                 <li>签到时请选择当前实际参加的课程，避免错误记录。</li>
                 <li>如遇特殊情况，可在备注中补充说明，方便后续核查。</li>

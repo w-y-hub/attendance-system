@@ -1,258 +1,73 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统首页</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-            background: #f5f7fb;
-            color: #333;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            padding: 24px 40px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-
-        .header p {
-            margin: 8px 0 0;
-            opacity: 0.92;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .welcome-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
-        }
-
-        .welcome-card h2 {
-            margin-top: 0;
-            color: #1f2937;
-        }
-
-        .info-row {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 16px;
-        }
-
-        .info-box {
-            flex: 1;
-            min-width: 220px;
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 18px;
-            border-left: 5px solid #4f46e5;
-        }
-
-        .info-box .label {
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .info-box .value {
-            margin-top: 8px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #111827;
-        }
-
-        .section-title {
-            margin: 26px 0 16px;
-            font-size: 22px;
-            color: #1f2937;
-        }
-
-        .module-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .module-card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            text-decoration: none;
-            color: inherit;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
-            transition: transform 0.18s ease, box-shadow 0.18s ease;
-            border: 1px solid #eef2f7;
-        }
-
-        .module-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.10);
-        }
-
-        .module-icon {
-            width: 52px;
-            height: 52px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            margin-bottom: 16px;
-            color: white;
-        }
-
-        .blue { background: #3b82f6; }
-        .green { background: #10b981; }
-        .orange { background: #f59e0b; }
-        .purple { background: #8b5cf6; }
-        .red { background: #ef4444; }
-        .teal { background: #14b8a6; }
-
-        .module-card h3 {
-            margin: 0 0 10px;
-            font-size: 18px;
-        }
-
-        .module-card p {
-            margin: 0;
-            color: #6b7280;
-            line-height: 1.6;
-            font-size: 14px;
-        }
-
-        .top-actions {
-            margin-top: 24px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 18px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .btn-primary {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-light {
-            background: white;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-
-        .footer {
-            text-align: center;
-            color: #9ca3af;
-            padding: 30px 20px;
-            font-size: 13px;
-        }
-    </style>
-</head>
+<head th:replace="~{fragments/common :: head('系统首页')}"></head>
 <body>
 
-<div class="header">
-    <h1>考勤管理系统</h1>
-    <p>欢迎回来，<span th:text="${username}">用户</span></p>
-</div>
+<div th:replace="~{fragments/common :: navbar}"></div>
 
-<div class="container">
-    <div class="welcome-card">
-        <h2>工作台</h2>
-        <p>你可以从这里进入系统各个功能模块，完成签到、查询记录、课程查看、学生数据导入等操作。</p>
-
-        <div class="info-row">
-            <div class="info-box">
-                <div class="label">当前登录用户</div>
-                <div class="value" th:text="${username}">student01</div>
-            </div>
-            <div class="info-box">
-                <div class="label">系统课程数</div>
-                <div class="value" th:text="${courseCount}">0</div>
+<div class="page-shell">
+    <div class="container">
+        <!-- 欢迎卡片 -->
+        <div class="welcome-card">
+            <h2>👋 欢迎回来，<span th:text="${username}">用户</span></h2>
+            <p style="color:var(--text-sub);margin-top:4px;">这是您的考勤管理控制台</p>
+            <div class="info-row">
+                <div class="info-box">
+                    <div class="label">当前学期课程数</div>
+                    <div class="value" th:text="${courseCount}">0</div>
+                </div>
+                <div class="info-box" style="border-left-color:var(--success);">
+                    <div class="label">今日状态</div>
+                    <div class="value" style="font-size:18px;">⬇ 请从下方功能进入</div>
+                </div>
             </div>
         </div>
 
-        <div class="top-actions">
-            <a th:href="@{/attendance/checkIn}" class="btn btn-primary">立即打卡</a>
-            <a th:href="@{/attendance/list}" class="btn btn-light">查看记录</a>
-            <a th:href="@{/student/import}" class="btn btn-success">导入学生</a>
+        <!-- 功能快捷入口 -->
+        <h3 style="font-size:18px;font-weight:600;color:var(--text-main);margin-bottom:4px;">📌 功能快捷入口</h3>
+        <p style="color:var(--text-sub);font-size:13px;margin-bottom:16px;">选择一项功能开始操作</p>
+
+        <div class="module-grid">
+            <a th:href="@{/attendance/checkIn}" class="module-card">
+                <div class="module-icon" style="background:#eef2ff;color:var(--primary);">📌</div>
+                <h3>考勤打卡</h3>
+                <p>选择课程进行签到或签退操作。</p>
+            </a>
+
+            <a th:href="@{/attendance/list}" class="module-card">
+                <div class="module-icon" style="background:#ecfdf3;color:var(--success);">📋</div>
+                <h3>考勤记录</h3>
+                <p>查看个人历史考勤记录，支持多条件筛选。</p>
+            </a>
+
+            <a th:href="@{/attendance/statistics}" class="module-card">
+                <div class="module-icon" style="background:#faf5ff;color:var(--secondary);">📊</div>
+                <h3>考勤统计</h3>
+                <p>按周/月度查看出勤率和统计图表。</p>
+            </a>
+
+            <a th:href="@{/attendance/import}" class="module-card">
+                <div class="module-icon" style="background:#fff7ed;color:#c2410c;">📥</div>
+                <h3>考勤导入</h3>
+                <p>通过 Excel 批量导入考勤记录。</p>
+            </a>
+
+            <a th:href="@{/student/list}" class="module-card">
+                <div class="module-icon" style="background:#f0f9ff;color:var(--info);">👥</div>
+                <h3>学生管理</h3>
+                <p>查看、新增、编辑和导入学生信息。</p>
+            </a>
+
+            <a th:href="@{/logout}" class="module-card" style="border-color:#fecaca;">
+                <div class="module-icon" style="background:#fef2f2;color:var(--danger);">🚪</div>
+                <h3>退出登录</h3>
+                <p>安全退出当前账号，返回登录页面。</p>
+            </a>
         </div>
     </div>
-
-    <h2 class="section-title">功能模块</h2>
-
-    <div class="module-grid">
-        <a th:href="@{/attendance/checkIn}" class="module-card">
-            <div class="module-icon blue">✓</div>
-            <h3>考勤打卡</h3>
-            <p>进入打卡页面，完成课程签到与签退操作。</p>
-        </a>
-
-        <a th:href="@{/attendance/list}" class="module-card">
-            <div class="module-icon green">📋</div>
-            <h3>考勤记录</h3>
-            <p>查看个人历史考勤记录，并支持多条件筛选。</p>
-        </a>
-
-        <a th:href="@{/attendance/export}" class="module-card">
-            <div class="module-icon orange">⬇</div>
-            <h3>数据导出</h3>
-            <p>导出当前考勤数据，便于留档和统计分析。</p>
-        </a>
-
-        <a th:href="@{/courses}" class="module-card">
-            <div class="module-icon purple">📚</div>
-            <h3>课程信息</h3>
-            <p>查看课程安排、上课时间与基本信息。</p>
-        </a>
-
-        <a th:href="@{/student/import}" class="module-card">
-            <div class="module-icon teal">⤴</div>
-            <h3>学生导入</h3>
-            <p>通过 Excel 批量导入学生信息，提升录入效率。</p>
-        </a>
-
-        <a th:href="@{/logout}" class="module-card">
-            <div class="module-icon red">⇦</div>
-            <h3>退出登录</h3>
-            <p>安全退出当前账号，返回登录页面。</p>
-        </a>
-    </div>
 </div>
 
-<div class="footer">
-    Attendance System Dashboard
-</div>
+<div th:replace="~{fragments/common :: footer}"></div>
 
 </body>
 </html>

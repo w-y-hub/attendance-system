@@ -1,6 +1,7 @@
 package com.example.attendance.controller;
 
 import com.example.attendance.dto.AttendanceStatisticsPageDto;
+import com.example.attendance.dto.ImportResult;
 import com.example.attendance.entity.Attendance;
 import com.example.attendance.entity.Course;
 import com.example.attendance.entity.Student;
@@ -17,6 +18,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.PrintWriter;
 import java.net.URLEncoder;
@@ -26,8 +29,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Controller
 public class AttendanceController {
@@ -247,7 +249,13 @@ public class AttendanceController {
         model.addAttribute("status", status);
         model.addAttribute("courseId", courseId);
         model.addAttribute("quickRange", quickRange);
-        model.addAttribute("courses", courseService.findAll());
+        List<Course> allCourses = courseService.findAll();
+        Map<Long, String> courseMap = new HashMap<>();
+        for (Course c : allCourses) {
+            courseMap.put(c.getId(), c.getCourseName());
+        }
+        model.addAttribute("courseMap", courseMap);
+        model.addAttribute("courses", allCourses);
         model.addAttribute("success", success);
 
         return "attendance-list";
@@ -324,18 +332,24 @@ public class AttendanceController {
 
         List<Attendance> list = attendanceService.findAll(spec);
 
+        Map<Long, String> courseMap = new HashMap<>();
+        for (Course c : courseService.findAll()) {
+            courseMap.put(c.getId(), c.getCourseName());
+        }
+
         response.setContentType("text/csv;charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         response.setHeader("Content-Disposition",
                 "attachment; filename=" + URLEncoder.encode("attendance.csv", StandardCharsets.UTF_8));
 
         PrintWriter writer = response.getWriter();
-        writer.println("日期,课程ID,签到时间,签退时间,状态,是否早退,备注");
+        writer.println("日期,课程名称,签到时间,签退时间,状态,是否早退,备注");
 
         for (Attendance a : list) {
+            String cName = a.getCourseId() == null ? "" : courseMap.getOrDefault(a.getCourseId(), String.valueOf(a.getCourseId()));
             writer.printf("%s,%s,%s,%s,%s,%s,%s%n",
                     a.getAttendanceDate() == null ? "" : a.getAttendanceDate(),
-                    a.getCourseId() == null ? "" : a.getCourseId(),
+                    cName,
                     a.getCheckInTime() == null ? "" : a.getCheckInTime(),
                     a.getCheckOutTime() == null ? "" : a.getCheckOutTime(),
                     a.getStatus() == null ? "" : a.getStatus(),
@@ -346,12 +360,43 @@ public class AttendanceController {
         writer.flush();
     }
 
-    /**
-     * 考勤统计页面
-     * 访问方式：
-     * /attendance/statistics
-     * /attendance/statistics?startDate=2025-05-01&endDate=2025-05-31
-     */
+    @GetMapping("/attendance/import")
+    public String importPage() {
+        return "attendance-import";
+    }
+
+    @PostMapping("/attendance/import")
+    public String importAttendance(@RequestParam("file") MultipartFile file,
+                                   RedirectAttributes redirectAttributes) {
+        if (file == null || file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "请选择要上传的 Excel 文件");
+            return "redirect:/attendance/import";
+        }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName == null || !(fileName.toLowerCase().endsWith(".xlsx") || fileName.toLowerCase().endsWith(".xls"))) {
+            redirectAttributes.addFlashAttribute("error", "请上传 .xlsx 或 .xls 格式的 Excel 文件");
+            return "redirect:/attendance/import";
+        }
+
+        // 检查文件实际大小
+        if (file.getSize() > 10 * 1024 * 1024) {
+            redirectAttributes.addFlashAttribute("error", "文件大小超过 10MB 限制");
+            return "redirect:/attendance/import";
+        }
+
+        try {
+            ImportResult result = attendanceService.importFromExcel(file);
+            redirectAttributes.addFlashAttribute("result", result);
+            redirectAttributes.addFlashAttribute("success",
+                    "导入完成：总共 " + result.getTotalCount() + " 条，成功 " + result.getSuccessCount() + " 条，失败 " + result.getFailCount() + " 条");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "导入失败：" + e.getMessage());
+        }
+
+        return "redirect:/attendance/import";
+    }
+
     @GetMapping("/attendance/statistics")
     public String statisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
                                  @RequestParam(value = "endDate", required = false) String endDateStr,
@@ -368,7 +413,6 @@ public class AttendanceController {
         model.addAttribute("startDate", startDateStr);
         model.addAttribute("endDate", endDateStr);
 
-        // 首次进入页面，不查询
         if (startDateStr == null || startDateStr.trim().isEmpty()
                 || endDateStr == null || endDateStr.trim().isEmpty()) {
             model.addAttribute("statistics", statistics);
@@ -394,6 +438,30 @@ public class AttendanceController {
         }
 
         return "attendance-statistics";
+    }
+
+    @GetMapping("/attendance/statistics/class")
+    public String classStatisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
+                                      @RequestParam(value = "endDate", required = false) String endDateStr,
+                                      Model model) {
+        model.addAttribute("startDate", startDateStr);
+        model.addAttribute("endDate", endDateStr);
+
+        if (startDateStr != null && !startDateStr.trim().isEmpty()
+                && endDateStr != null && !endDateStr.trim().isEmpty()) {
+            try {
+                LocalDate startDate = LocalDate.parse(startDateStr);
+                LocalDate endDate = LocalDate.parse(endDateStr);
+                if (!startDate.isAfter(endDate)) {
+                    model.addAttribute("classStats", attendanceService.getClassStatistics(startDate, endDate));
+                } else {
+                    model.addAttribute("errorMessage", "开始日期不能晚于结束日期");
+                }
+            } catch (Exception e) {
+                model.addAttribute("errorMessage", "日期格式不正确");
+            }
+        }
+        return "attendance-statistics-class";
     }
 
     private String encode(String text) {

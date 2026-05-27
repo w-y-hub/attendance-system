@@ -1,80 +1,112 @@
 <!DOCTYPE html>
+<!--
+  student-form.html —— 新增/编辑学生表单
+
+  这个页面同时用于"新增"和"编辑"两种操作。
+  区别在于：
+  - 新增时，student.id = null，表单提交到 /student/save（INSERT）
+  - 编辑时，student.id = 已有值，表单提交到 /student/update（UPDATE）
+
+  th:object="${student}" 把表单和 Student 对象绑定起来，
+  表单输入会自动填入 Student 的属性，提交时也会自动封装成 Student。
+-->
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${title}">学生表单</title>
-    <link rel="stylesheet"
-          th:href="@{/webjars/bootstrap/5.3.0/css/bootstrap.min.css}">
-</head>
+<head th:replace="~{fragments/common :: head(${title})}"></head>
 <body>
-<div class="container mt-4">
-    <h2 th:text="${title}">学生表单</h2>
+<div th:replace="~{fragments/common :: navbar}"></div>
 
-    <form th:action="${student.id} == null ? @{/student/save} : @{/student/update}"
-          th:object="${student}"
-          method="post"
-          class="mt-4">
+<div class="page-shell">
+    <div class="container">
+        <div class="card" style="max-width:700px;margin:0 auto;">
+            <h2 class="card-header" th:text="${title}">学生表单</h2>
 
-        <input type="hidden" th:field="*{id}"/>
+            <!--
+              th:action：用三目表达式判断是新增还是编辑
+              新增 -> /student/save
+              编辑 -> /student/update
 
-        <div class="mb-3">
-            <label class="form-label">学号</label>
-            <input type="text" th:field="*{studentNo}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('studentNo')}" th:errors="*{studentNo}"></div>
-            <div class="text-danger" th:if="${studentNoError}" th:text="${studentNoError}"></div>
+              th:object="${student}"：绑定 Student 对象
+              表单里的 th:field="*{name}" 会自动读取和设置 student.name
+            -->
+            <form th:action="${student.id} == null ? @{/student/save} : @{/student/update}"
+                  th:object="${student}"
+                  method="post">
+
+                <!-- 隐藏字段：存放 student.id，编辑时用来定位要更新的记录 -->
+                <input type="hidden" th:field="*{id}"/>
+
+                <!-- ===== 学号 ===== -->
+                <div class="form-group">
+                    <label class="form-label">学号 *</label>
+                    <input type="text" th:field="*{studentNo}" class="form-input" placeholder="如：42211077" required/>
+                    <!-- 显示 JSR-303 校验（@NotBlank）的错误信息 -->
+                    <div class="text-danger" th:if="${#fields.hasErrors('studentNo')}" th:errors="*{studentNo}"></div>
+                    <!-- 显示自定义校验错误（如学号已存在） -->
+                    <div class="text-danger" th:if="${studentNoError}" th:text="${studentNoError}"></div>
+                </div>
+
+                <!-- ===== 姓名 ===== -->
+                <div class="form-group">
+                    <label class="form-label">姓名 *</label>
+                    <input type="text" th:field="*{name}" class="form-input" placeholder="如：孙涛涛" required/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                </div>
+
+                <!-- ===== 性别 ===== -->
+                <div class="form-group">
+                    <label class="form-label">性别 *</label>
+                    <select th:field="*{gender}" class="form-input" required>
+                        <option value="">请选择</option>
+                        <option value="男">男</option>
+                        <option value="女">女</option>
+                    </select>
+                    <div class="text-danger" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
+                </div>
+
+                <!-- ===== 学院（新增） ===== -->
+                <div class="form-group">
+                    <label class="form-label">学院</label>
+                    <input type="text" th:field="*{college}" class="form-input" placeholder="如：计算机与人工智能学院"/>
+                </div>
+
+                <!-- ===== 年级（新增） ===== -->
+                <div class="form-group">
+                    <label class="form-label">年级</label>
+                    <input type="text" th:field="*{grade}" class="form-input" placeholder="如：2022"/>
+                </div>
+
+                <!-- ===== 专业（新增） ===== -->
+                <div class="form-group">
+                    <label class="form-label">专业</label>
+                    <input type="text" th:field="*{major}" class="form-input" placeholder="如：计算机科学与技术"/>
+                </div>
+
+                <!-- ===== 班级 ===== -->
+                <div class="form-group">
+                    <label class="form-label">班级 *</label>
+                    <input type="text" th:field="*{className}" class="form-input" placeholder="如：2022级计算机科学与技术" required/>
+                    <div class="text-danger" th:if="${#fields.hasErrors('className')}" th:errors="*{className}"></div>
+                </div>
+
+                <!-- ===== 状态 ===== -->
+                <div class="form-group">
+                    <label class="form-label">状态</label>
+                    <select th:field="*{status}" class="form-input">
+                        <option th:value="1">正常</option>
+                        <option th:value="0">禁用</option>
+                    </select>
+                </div>
+
+                <!-- ===== 按钮 ===== -->
+                <div style="display:flex;gap:12px;margin-top:24px;">
+                    <button type="submit" class="btn btn-primary">💾 保存</button>
+                    <a th:href="@{/student/list}" class="btn btn-secondary">← 返回列表</a>
+                </div>
+            </form>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">姓名</label>
-            <input type="text" th:field="*{name}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">班级</label>
-            <input type="text" th:field="*{className}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('className')}" th:errors="*{className}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">性别</label>
-            <select th:field="*{gender}" class="form-select">
-                <option value="">请选择</option>
-                <option value="男">男</option>
-                <option value="女">女</option>
-            </select>
-            <div class="text-danger" th:if="${#fields.hasErrors('gender')}" th:errors="*{gender}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">出生日期</label>
-            <input type="date" th:field="*{birthDate}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('birthDate')}" th:errors="*{birthDate}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">手机号</label>
-            <input type="text" th:field="*{phone}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('phone')}" th:errors="*{phone}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">邮箱</label>
-            <input type="email" th:field="*{email}" class="form-control"/>
-            <div class="text-danger" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">状态</label>
-            <select th:field="*{status}" class="form-select">
-                <option th:value="1">正常</option>
-                <option th:value="0">禁用</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn btn-primary">保存</button>
-        <a th:href="@{/student/list}" class="btn btn-secondary">返回列表</a>
-    </form>
+    </div>
 </div>
+
+<div th:replace="~{fragments/common :: footer}"></div>
 </body>
 </html>

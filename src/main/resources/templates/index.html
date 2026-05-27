@@ -1,13 +1,37 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title th:text="${title}">首页</title>
-</head>
-<body>
-<h1 th:text="${title}">系统首页</h1>
-<p>欢迎来到班级考勤管理系统！</p>
+<head th:replace="~{fragments/common :: head('考勤管理系统')}"></head>
+<body class="page-auth">
+<div class="background-shape shape1"></div>
+<div class="background-shape shape2"></div>
 
-<p><a th:href="@{/logout}">退出登录</a></p>
+<div class="auth-card">
+    <div class="auth-left">
+        <div class="auth-icon">📋</div>
+        <h1>考勤管理系统</h1>
+        <p class="auth-desc">高效管理班级考勤，实时掌握出勤动态。</p>
+        <div class="auth-features">
+            <span>✅ 在线打卡签到</span>
+            <span>📊 多维度统计报表</span>
+            <span>📥 Excel 批量导入</span>
+            <span>🔒 安全可靠的数据管理</span>
+        </div>
+    </div>
+    <div class="auth-right" style="text-align:center;">
+        <div style="padding:60px 20px;">
+            <div style="font-size:64px;margin-bottom:20px;">👋</div>
+            <h2 class="auth-title">欢迎使用考勤系统</h2>
+            <p class="auth-subtitle">请登录或注册以继续使用</p>
+            <div style="margin-top:36px;display:flex;flex-direction:column;gap:16px;max-width:280px;margin-left:auto;margin-right:auto;">
+                <a th:href="@{/login}" class="login-btn" style="text-decoration:none;">立即登录</a>
+                <a th:href="@{/register}" class="btn btn-secondary" style="text-decoration:none;text-align:center;">注册新账号</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="copyright" style="position:fixed;bottom:16px;left:0;right:0;text-align:center;color:rgba(255,255,255,0.5);font-size:12px;z-index:2;">
+    &copy; 2025 考勤管理系统 &middot; Attendance System
+</div>
 </body>
 </html>

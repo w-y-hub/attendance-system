@@ -1,370 +1,131 @@
 <!DOCTYPE html>
-<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>导入学生</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-            background: #f5f7fb;
-            color: #333;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #4f46e5, #7c3aed);
-            color: white;
-            padding: 24px 40px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-
-        .header p {
-            margin: 8px 0 0;
-            opacity: 0.92;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
-            border: 1px solid #eef2f7;
-        }
-
-        .card h2, .card h3 {
-            margin-top: 0;
-            color: #1f2937;
-        }
-
-        .desc {
-            color: #6b7280;
-            line-height: 1.7;
-            font-size: 14px;
-        }
-
-        .upload-box {
-            margin-top: 20px;
-            padding: 22px;
-            background: #f9fafb;
-            border: 2px dashed #c7d2fe;
-            border-radius: 14px;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            align-items: center;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #374151;
-            min-width: 120px;
-        }
-
-        .file-input {
-            flex: 1;
-            min-width: 240px;
-            padding: 10px;
-            background: white;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-        }
-
-        .actions {
-            margin-top: 18px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 18px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary {
-            background: #4f46e5;
-            color: white;
-        }
-
-        .btn-light {
-            background: white;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .alert {
-            padding: 14px 16px;
-            border-radius: 12px;
-            margin-top: 18px;
-            font-size: 14px;
-        }
-
-        .alert-error {
-            background: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .stats-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            margin-top: 18px;
-        }
-
-        .stat-box {
-            flex: 1;
-            min-width: 180px;
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 18px;
-            border-left: 5px solid #4f46e5;
-        }
-
-        .stat-label {
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .stat-value {
-            margin-top: 8px;
-            font-size: 24px;
-            font-weight: bold;
-            color: #111827;
-        }
-
-        .error-list {
-            margin: 18px 0 0;
-            padding-left: 20px;
-        }
-
-        .error-list li {
-            margin-bottom: 8px;
-            color: #dc2626;
-            line-height: 1.6;
-        }
-
-        .template-box {
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 18px;
-            margin-top: 14px;
-        }
-
-        .template-line {
-            margin: 10px 0;
-            color: #374151;
-            line-height: 1.7;
-            font-size: 14px;
-        }
-
-        .highlight {
-            display: inline-block;
-            background: #eef2ff;
-            color: #4338ca;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 13px;
-            margin-top: 8px;
-        }
-
-        .footer {
-            text-align: center;
-            color: #9ca3af;
-            padding: 30px 20px;
-            font-size: 13px;
-        }
-    </style>
-</head>
+<html xmlns:th="http://www.thymeleaf.org" lang="zh-CN">
+<head th:replace="~{fragments/common :: head('导入学生')}"></head>
 <body>
+<div th:replace="~{fragments/common :: navbar}"></div>
 
-<div class="header">
-    <h1>学生 Excel 导入</h1>
-    <p>通过上传 Excel 文件，批量导入学生基本信息</p>
-</div>
-
-<div class="container">
-
-    <div class="card">
-        <h2>导入操作</h2>
-        <p class="desc">
-            请选择符合模板要求的 .xlsx 文件进行上传。系统会自动校验学号、姓名、班级等字段，并返回导入结果。
-        </p>
-
-        <form th:action="@{/student/import}" method="post" enctype="multipart/form-data">
-            <input type="hidden"
-                   th:name="${_csrf.parameterName}"
-                   th:value="${_csrf.token}" />
-
-            <div class="upload-box">
-                <div class="form-row">
-                    <label class="form-label">选择 Excel 文件</label>
-                    <input class="file-input" type="file" name="file" accept=".xlsx">
-                </div>
-
-                <div class="actions">
-                    <button type="submit" class="btn btn-primary">开始导入</button>
-                    <a th:href="@{/student/list}" class="btn btn-light">返回学生列表</a>
-                    <a th:href="@{/home}" class="btn btn-light">返回首页</a>
-                </div>
-            </div>
-        </form>
+<div class="page-shell">
+    <div class="container">
+        <!-- 标题 -->
+        <div style="margin-bottom:24px;">
+            <h2 style="color:var(--text-main);">📥 导入学生</h2>
+            <p style="color:var(--text-sub);">通过 Excel 文件批量导入学生信息</p>
+        </div>
 
         <!-- 错误提示 -->
-        <div th:if="${error}" class="alert alert-error">
-            <span th:text="${error}"></span>
+        <div class="alert alert-danger" th:if="${error}" th:text="${error}"></div>
+
+        <div class="card">
+            <h3 class="card-title">上传 Excel 文件</h3>
+            <p class="card-subtitle">选择包含学生信息的 .xlsx 文件进行批量导入</p>
+
+            <div style="margin-top:20px;padding:22px;background:#f9fafb;border:2px dashed #c7d2fe;border-radius:14px;">
+                <form th:action="@{/student/import}" method="post" enctype="multipart/form-data" onsubmit="return showProgress()">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                    <div class="form-group">
+                        <label class="form-label" for="fileInput">选择文件</label>
+                        <input id="fileInput" name="file" type="file" class="form-input" accept=".xlsx" required>
+                    </div>
+
+                    <div style="display:flex;gap:12px;align-items:center;margin-top:16px;">
+                        <button id="submitBtn" type="submit" class="btn btn-primary">📤 开始上传</button>
+                        <a th:href="@{/student/list}" class="btn btn-secondary">返回列表</a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 进度条 -->
+            <div id="progressSection" style="display:none;margin-top:16px;">
+                <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">正在导入...</div>
+                <div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+                    <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:4px;transition:width 0.3s;text-align:center;font-size:10px;line-height:8px;color:#fff;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 导入结果 -->
+        <div class="card" th:if="${result != null}">
+            <h3 class="card-title">导入结果</h3>
+            <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:16px;">
+                <div class="stat-card primary" style="flex:1;min-width:140px;">
+                    <div class="stat-label">总记录数</div>
+                    <div class="stat-value" th:text="${result.totalCount}">0</div>
+                </div>
+                <div class="stat-card success" style="flex:1;min-width:140px;">
+                    <div class="stat-label">成功</div>
+                    <div class="stat-value" th:text="${result.successCount}">0</div>
+                </div>
+                <div class="stat-card danger" style="flex:1;min-width:140px;">
+                    <div class="stat-label">失败</div>
+                    <div class="stat-value" th:text="${result.failCount}">0</div>
+                </div>
+            </div>
+            <div style="margin-top:16px;" th:if="${not #lists.isEmpty(result.errorMessages)}">
+                <h4 style="font-size:14px;color:var(--danger-text);margin-bottom:8px;">错误详情：</h4>
+                <ul style="padding-left:20px;">
+                    <li th:each="msg : ${result.errorMessages}" th:text="${msg}" style="font-size:13px;color:var(--text-sub);margin-bottom:4px;"></li>
+                </ul>
+                <button class="btn btn-danger" style="margin-top:12px;" onclick="downloadErrorReport()">⬇ 下载失败报告</button>
+            </div>
+        </div>
+
+        <!-- 模板说明 -->
+        <div class="card">
+            <h3 class="card-title">📄 Excel 模板说明</h3>
+            <div style="margin-top:12px;">
+                <div class="template-hints">
+                    <h4>字段顺序（按列）</h4>
+                    <div class="template-line">学号 | 姓名 | 性别 | 学院 | 年级 | 专业 | 班级</div>
+                    <div class="template-line">示例：42211077 | 孙涛涛 | 男 | 计算机与人工智能学院 | 2022 | 计算机科学与技术 | 2022级计算机科学与技术</div>
+                    <div class="template-line" style="color:var(--warning-text);">注意：性别只能是"男"或"女"</div>
+                    <div class="highlight">支持 .xlsx 格式，单文件不超过 10MB，第一行为表头</div>
+                </div>
+            </div>
         </div>
     </div>
-
-    <!-- 导入结果 -->
-    <div class="card" th:if="${result != null}">
-        <h2>导入结果</h2>
-        <p class="desc">系统已完成本次 Excel 数据处理，以下为导入统计信息。</p>
-
-        <div class="stats-row">
-            <div class="stat-box">
-                <div class="stat-label">总行数</div>
-                <div class="stat-value" th:text="${result.totalCount}">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">成功数</div>
-                <div class="stat-value" th:text="${result.successCount}">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">失败数</div>
-                <div class="stat-value" th:text="${result.failCount}">0</div>
-            </div>
-        </div>
-
-        <div th:if="${result.errorMessages != null and !result.errorMessages.isEmpty()}">
-            <h3 style="margin-top: 24px;">失败明细</h3>
-            <ul class="error-list">
-                <li th:each="msg : ${result.errorMessages}" th:text="${msg}"></li>
-            </ul>
-        </div>
-    </div>
-
-    <!-- 模板说明 -->
-    <div class="card">
-        <h2>Excel 模板说明</h2>
-        <p class="desc">请确保上传文件的第一张工作表，按以下字段顺序填写：</p>
-
-        <div class="template-box">
-            <div class="template-line">字段顺序：学号 | 姓名 | 班级 | 性别 | 出生日期 | 手机号 | 邮箱 | 状态</div>
-            <div class="template-line">出生日期建议格式：yyyy-MM-dd，例如 2004-05-01</div>
-            <div class="template-line">状态建议填写：1（正常） 或 0（禁用）</div>
-            <div class="highlight">当前仅支持 .xlsx 格式文件</div>
-        </div>
-    </div>
-
 </div>
 
-<div class="footer">
-    Attendance System Import Page
-</div>
+<div th:replace="~{fragments/common :: footer}"></div>
 
-</body>
-</html>
-
-<!--上传进度显示-->
-<form id="uploadForm" th:action="@{/student/import}" method="post" enctype="multipart/form-data">
-    <input type="hidden"
-           th:name="${_csrf.parameterName}"
-           th:value="${_csrf.token}" />
-
-    <div class="upload-box">
-        <div class="form-row">
-            <label class="form-label">选择 Excel 文件</label>
-            <input class="file-input" type="file" name="file" id="fileInput" accept=".xlsx">
-        </div>
-
-        <div class="actions">
-            <button type="button" class="btn btn-primary" onclick="uploadFile()">开始导入</button>
-        </div>
-
-        <div style="margin-top:16px;">
-            <div style="height: 18px; background:#e5e7eb; border-radius: 10px; overflow:hidden;">
-                <div id="progressBar" style="height:100%; width:0; background:#4f46e5; color:white; text-align:center; line-height:18px; font-size:12px;">0%</div>
-            </div>
-            <div id="progressText" style="margin-top:8px; font-size:13px; color:#6b7280;">等待上传</div>
-        </div>
-    </div>
-</form>
-
-<!--js上传进度-->
 <script>
-    function uploadFile() {
-        const form = document.getElementById("uploadForm");
-        const fileInput = document.getElementById("fileInput");
-        const progressBar = document.getElementById("progressBar");
-        const progressText = document.getElementById("progressText");
+    function downloadErrorReport() {
+        var errors = [];
+        var items = document.querySelectorAll("ul li");
+        items.forEach(function(li) { errors.push(li.textContent); });
+        if (errors.length === 0) return;
+        var csv = "错误信息\n" + errors.join("\n");
+        var blob = new Blob(["\ufeff" + csv], {type: "text/csv;charset=utf-8"});
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "导入失败报告.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    }
 
+    function showProgress() {
+        var fileInput = document.getElementById("fileInput");
         if (!fileInput.files || fileInput.files.length === 0) {
             alert("请选择文件");
-            return;
+            return false;
         }
-
-        const formData = new FormData(form);
-        const xhr = new XMLHttpRequest();
-
-        xhr.open("POST", form.action, true);
-
-        xhr.upload.onprogress = function (e) {
-            if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 100);
-                progressBar.style.width = percent + "%";
-                progressBar.innerText = percent + "%";
-                progressText.innerText = "正在上传：" + percent + "%";
+        document.getElementById("submitBtn").disabled = true;
+        document.getElementById("submitBtn").innerText = "上传中...";
+        document.getElementById("progressSection").style.display = "block";
+        var bar = document.getElementById("progressBar");
+        var w = 0;
+        setInterval(function () {
+            if (w < 90) {
+                w += Math.random() * 15;
+                if (w > 90) w = 90;
+                bar.style.width = w + "%";
+                bar.innerText = Math.round(w) + "%";
             }
-        };
-
-        xhr.onload = function () {
-            if (xhr.status === 200) {
-                progressBar.style.width = "100%";
-                progressBar.innerText = "100%";
-                progressText.innerText = "上传完成，正在处理数据...";
-
-                // 直接刷新页面显示返回结果
-                document.open();
-                document.write(xhr.responseText);
-                document.close();
-            } else {
-                progressText.innerText = "上传失败";
-                alert("上传失败，请重试");
-            }
-        };
-
-        xhr.onerror = function () {
-            progressText.innerText = "上传失败";
-            alert("网络异常，上传失败");
-        };
-
-        xhr.send(formData);
+        }, 500);
+        return true;
     }
 </script>
+</body>
+</html>
