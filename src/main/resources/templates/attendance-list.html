@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>考勤记录</title>
@@ -9,97 +9,119 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 
 <div class="container mt-4">
-    <h2>考勤记录</h2>
+    <h2 class="mb-4">考勤记录</h2>
 
-    <div th:if="${success == 'checkin'}" class="alert alert-success">
-        打卡成功！
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form th:action="@{/attendance/list}" method="get">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">开始日期</label>
+                        <input type="date" class="form-control" name="startDate" th:value="${startDate}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">结束日期</label>
+                        <input type="date" class="form-control" name="endDate" th:value="${endDate}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">状态</label>
+                        <select class="form-select" name="status">
+                            <option value="">全部状态</option>
+                            <option value="NORMAL" th:selected="${status == 'NORMAL'}">正常</option>
+                            <option value="LATE" th:selected="${status == 'LATE'}">迟到</option>
+                            <option value="EARLY" th:selected="${status == 'EARLY'}">早退</option>
+                            <option value="ABSENT" th:selected="${status == 'ABSENT'}">缺勤</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">课程</label>
+                        <select class="form-select" name="courseId">
+                            <option value="">全部课程</option>
+                            <option th:each="course : ${courses}"
+                                    th:value="${course.id}"
+                                    th:text="${course.courseName}"
+                                    th:selected="${courseId != null and courseId == course.id}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">快速筛选</label>
+                        <select class="form-select" name="quickRange">
+                            <option value="">请选择</option>
+                            <option value="today" th:selected="${quickRange == 'today'}">今天</option>
+                            <option value="week" th:selected="${quickRange == 'week'}">本周</option>
+                            <option value="month" th:selected="${quickRange == 'month'}">本月</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <label class="form-label invisible">操作</label>
+                        <button class="btn btn-primary" type="submit">查询</button>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-md-2 d-grid">
+                        <a class="btn btn-success"
+                           th:href="@{/attendance/export(startDate=${startDate},endDate=${endDate},status=${status},courseId=${courseId},quickRange=${quickRange})}">
+                            导出 CSV
+                        </a>
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <a class="btn btn-outline-info" th:href="@{/attendance/statistics}">
+                            查看统计
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
 
-    <form th:action="@{/attendance/list}" method="get" class="mb-4">
-        <div class="row g-2">
-            <div class="col-md-2">
-                <input type="date" class="form-control" name="startDate" th:value="${startDate}">
-            </div>
-            <div class="col-md-2">
-                <input type="date" class="form-control" name="endDate" th:value="${endDate}">
-            </div>
-            <div class="col-md-2">
-                <select class="form-select" name="status">
-                    <option value="">全部状态</option>
-                    <option value="NORMAL" th:selected="${status == 'NORMAL'}">正常</option>
-                    <option value="LATE" th:selected="${status == 'LATE'}">迟到</option>
-                    <option value="EARLY" th:selected="${status == 'EARLY'}">早退</option>
-                    <option value="ABSENT" th:selected="${status == 'ABSENT'}">缺勤</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select class="form-select" name="courseId">
-                    <option value="">全部课程</option>
-                    <option th:each="course : ${courses}"
-                            th:value="${course.id}"
-                            th:text="${course.courseName}"
-                            th:selected="${courseId != null and courseId == course.id}">
-                    </option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select class="form-select" name="quickRange">
-                    <option value="">快速筛选</option>
-                    <option value="today" th:selected="${quickRange == 'today'}">今天</option>
-                    <option value="week" th:selected="${quickRange == 'week'}">本周</option>
-                    <option value="month" th:selected="${quickRange == 'month'}">本月</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" type="submit">查询</button>
-            </div>
-        </div>
-
-        <div class="row g-2 mt-2">
-            <div class="col-md-2 d-grid">
-                <a class="btn btn-success"
-                   th:href="@{/attendance/export(startDate=${startDate},endDate=${endDate},status=${status},courseId=${courseId},quickRange=${quickRange})}">
-                    导出CSV
-                </a>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-hover align-middle text-center mb-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th>日期</th>
+                        <th>课程ID</th>
+                        <th>签到时间</th>
+                        <th>签退时间</th>
+                        <th>状态</th>
+                        <th>早退</th>
+                        <th>备注</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="record : ${records}">
+                        <td th:text="${#temporals.format(record.attendanceDate, 'yyyy-MM-dd')}"></td>
+                        <td th:text="${record.courseId}"></td>
+                        <td th:text="${record.checkInTime != null ? #temporals.format(record.checkInTime, 'HH:mm:ss') : ''}"></td>
+                        <td th:text="${record.checkOutTime != null ? #temporals.format(record.checkOutTime, 'HH:mm:ss') : ''}"></td>
+                        <td>
+                            <span th:switch="${record.status}">
+                                <span th:case="'NORMAL'" class="badge bg-success">正常</span>
+                                <span th:case="'LATE'" class="badge bg-warning text-dark">迟到</span>
+                                <span th:case="'EARLY'" class="badge bg-info text-dark">早退</span>
+                                <span th:case="'ABSENT'" class="badge bg-danger">缺勤</span>
+                                <span th:case="*" class="badge bg-secondary">未知</span>
+                            </span>
+                        </td>
+                        <td th:text="${record.earlyLeave != null and record.earlyLeave ? '是' : '否'}"></td>
+                        <td th:text="${record.remark}"></td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(records)}">
+                        <td colspan="7" class="text-muted">暂无考勤记录</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
-    </form>
+    </div>
 
-    <table class="table table-striped table-bordered">
-        <thead>
-        <tr>
-            <th>日期</th>
-            <th>课程ID</th>
-            <th>签到时间</th>
-            <th>签退时间</th>
-            <th>状态</th>
-            <th>早退</th>
-            <th>备注</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="record : ${records}">
-            <td th:text="${#temporals.format(record.attendanceDate, 'yyyy-MM-dd')}"></td>
-            <td th:text="${record.courseId}"></td>
-            <td th:text="${record.checkInTime != null ? #temporals.format(record.checkInTime, 'HH:mm:ss') : ''}"></td>
-            <td th:text="${record.checkOutTime != null ? #temporals.format(record.checkOutTime, 'HH:mm:ss') : ''}"></td>
-            <td>
-                <span th:switch="${record.status}">
-                    <span th:case="'NORMAL'" class="badge bg-success">正常</span>
-                    <span th:case="'LATE'" class="badge bg-warning">迟到</span>
-                    <span th:case="'EARLY'" class="badge bg-info">早退</span>
-                    <span th:case="'ABSENT'" class="badge bg-danger">缺勤</span>
-                    <span th:case="*" class="badge bg-secondary">未知</span>
-                </span>
-            </td>
-            <td th:text="${record.earlyLeave != null and record.earlyLeave ? '是' : '否'}"></td>
-            <td th:text="${record.remark}"></td>
-        </tr>
-        </tbody>
-    </table>
-
-    <nav th:if="${totalPages > 1}">
-        <ul class="pagination">
+    <nav class="mt-4" th:if="${totalPages > 1}">
+        <ul class="pagination justify-content-center">
             <li class="page-item"
                 th:each="i : ${#numbers.sequence(1, totalPages)}"
                 th:classappend="${i == currentPage ? ' active' : ''}">

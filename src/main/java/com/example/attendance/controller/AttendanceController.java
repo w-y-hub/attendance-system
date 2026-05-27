@@ -1,5 +1,6 @@
 package com.example.attendance.controller;
 
+import com.example.attendance.dto.AttendanceStatisticsPageDto;
 import com.example.attendance.entity.Attendance;
 import com.example.attendance.entity.Course;
 import com.example.attendance.entity.Student;
@@ -343,6 +344,56 @@ public class AttendanceController {
         }
 
         writer.flush();
+    }
+
+    /**
+     * 考勤统计页面
+     * 访问方式：
+     * /attendance/statistics
+     * /attendance/statistics?startDate=2025-05-01&endDate=2025-05-31
+     */
+    @GetMapping("/attendance/statistics")
+    public String statisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
+                                 @RequestParam(value = "endDate", required = false) String endDateStr,
+                                 Principal principal,
+                                 Model model) {
+
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        String studentNo = principal.getName();
+        AttendanceStatisticsPageDto statistics = new AttendanceStatisticsPageDto();
+
+        model.addAttribute("startDate", startDateStr);
+        model.addAttribute("endDate", endDateStr);
+
+        // 首次进入页面，不查询
+        if (startDateStr == null || startDateStr.trim().isEmpty()
+                || endDateStr == null || endDateStr.trim().isEmpty()) {
+            model.addAttribute("statistics", statistics);
+            return "attendance-statistics";
+        }
+
+        try {
+            LocalDate startDate = LocalDate.parse(startDateStr);
+            LocalDate endDate = LocalDate.parse(endDateStr);
+
+            if (startDate.isAfter(endDate)) {
+                model.addAttribute("errorMessage", "开始日期不能晚于结束日期");
+                model.addAttribute("statistics", statistics);
+                return "attendance-statistics";
+            }
+
+            statistics = attendanceService.getAttendanceStatistics(studentNo, startDate, endDate);
+            model.addAttribute("statistics", statistics);
+
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", "日期格式不正确，请按 yyyy-MM-dd 格式输入");
+            model.addAttribute("statistics", statistics);
+        }
+
+        return "attendance-statistics";
     }
 
     private String encode(String text) {

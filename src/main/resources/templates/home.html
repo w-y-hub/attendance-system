@@ -125,6 +125,7 @@
         .orange { background: #f59e0b; }
         .purple { background: #8b5cf6; }
         .red { background: #ef4444; }
+        .teal { background: #14b8a6; }
 
         .module-card h3 {
             margin: 0 0 10px;
@@ -165,6 +166,11 @@
             border: 1px solid #ddd;
         }
 
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
         .footer {
             text-align: center;
             color: #9ca3af;
@@ -183,7 +189,7 @@
 <div class="container">
     <div class="welcome-card">
         <h2>工作台</h2>
-        <p>你可以从这里进入系统各个功能模块，完成签到、查询记录、课程查看等操作。</p>
+        <p>你可以从这里进入系统各个功能模块，完成签到、查询记录、课程查看、学生数据导入等操作。</p>
 
         <div class="info-row">
             <div class="info-box">
@@ -199,6 +205,7 @@
         <div class="top-actions">
             <a th:href="@{/attendance/checkIn}" class="btn btn-primary">立即打卡</a>
             <a th:href="@{/attendance/list}" class="btn btn-light">查看记录</a>
+            <a th:href="@{/student/import}" class="btn btn-success">导入学生</a>
         </div>
     </div>
 
@@ -227,6 +234,12 @@
             <div class="module-icon purple">📚</div>
             <h3>课程信息</h3>
             <p>查看课程安排、上课时间与基本信息。</p>
+        </a>
+
+        <a th:href="@{/student/import}" class="module-card">
+            <div class="module-icon teal">⤴</div>
+            <h3>学生导入</h3>
+            <p>通过 Excel 批量导入学生信息，提升录入效率。</p>
         </a>
 
         <a th:href="@{/logout}" class="module-card">
