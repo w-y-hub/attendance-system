@@ -66,6 +66,18 @@
                         <td>
                             <a class="btn btn-primary btn-sm" style="padding:4px 12px;font-size:12px;"
                                th:href="@{/student/edit/{id}(id=${student.id})}">编辑</a>
+                            <!--
+                                 删除按钮
+                                 注意：th:action 会自动添加 CSRF 令牌，不需要手动写 hidden 字段。
+                                 如果手写 ${_csrf.parameterName}，没有安装 thymeleaf-extras-springsecurity
+                                 依赖时会报 NullPointerException。
+                            -->
+                            <form th:action="@{/student/delete/{id}(id=${student.id})}"
+                                  method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        style="padding:4px 12px;font-size:12px;"
+                                        onclick="return confirm('确定要删除该学生吗？此操作不可撤销！');">删除</button>
+                            </form>
                         </td>
                     </tr>
                     <!-- 如果列表为空，显示提示 -->

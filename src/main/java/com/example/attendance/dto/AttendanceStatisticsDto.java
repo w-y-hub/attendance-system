@@ -1,5 +1,16 @@
 package com.example.attendance.dto;
 
+/**
+ * 考勤统计项 —— 单个统计区间的数据
+ *
+ * 无论按周还是按月，每一段统计都是同样的结构：
+ *   label          → 区间名称（如 "2025-05" 或 "05-01 ~ 05-07"）
+ *   totalCount     → 该区间总考勤次数
+ *   presentCount   → 出勤次数（NORMAL + LATE + EARLY）
+ *   absentCount    → 缺勤次数（ABSENT）
+ *   attendanceRate → 出勤率（百分比，保留两位小数）
+ */
+
 public class AttendanceStatisticsDto {
 
     private String label;

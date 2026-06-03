@@ -1,5 +1,25 @@
 package com.example.attendance.controller;
 
+/**
+ * 用户认证控制器 —— 处理注册请求
+ *
+ * 【关于登录】
+ * 登录（POST /doLogin）不由这个控制器处理，
+ * 而是由 Spring Security 自动处理的（见 SecurityConfig）。
+ * 这个控制器只负责"注册"功能。
+ *
+ * 【POST 注册流程】
+ * 1. register.html 表单提交 → POST /register
+ * 2. 这个控制器接收表单参数并做校验
+ * 3. 调用 UserService.register() 加密密码并存入数据库
+ * 4. 返回 login 页面，提示"注册成功，请登录"
+ *
+ * 【@RequestParam】
+ * 用于获取表单提交的单个字段值。
+ * 参数名默认和表单 input 的 name 属性一致，
+ * 若不一致可以用 @RequestParam("表单name") 指定别名。
+ */
+
 import com.example.attendance.entity.Role;
 import com.example.attendance.entity.User;
 import com.example.attendance.service.UserService;

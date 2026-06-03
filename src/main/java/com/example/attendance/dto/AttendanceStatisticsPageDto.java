@@ -3,6 +3,18 @@ package com.example.attendance.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 统计页面数据 —— 一次统计查询的完整结果
+ *
+ * 包含三部分统计：
+ *   1. rangeTotalCount / rangePresentCount / ...  → 整个日期范围的汇总
+ *   2. weeklyStatistics                           → 按周细分（每周一条）
+ *   3. monthlyStatistics                          → 按月细分（每月一条）
+ *
+ * 前端 Thymeleaf 页面通过 ${statistics.rangeTotalCount}、
+ * ${statistics.weeklyStatistics} 等方式展示这些数据。
+ */
+
 public class AttendanceStatisticsPageDto {
 
     private String startDate;

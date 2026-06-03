@@ -1,5 +1,21 @@
 package com.example.attendance.entity;
 
+/**
+ * 考勤记录实体 —— 对应数据库 attendance 表
+ *
+ * 一条考勤记录 = 某学生 + 某课程 + 某天 + 签到/签退情况
+ * 核心概念：一个学生一天上一门课，产生一条考勤记录。
+ *
+ * 【状态 status 说明】
+ *   NORMAL  — 正常签到（在课程开始时间之前或准时签到）
+ *   LATE    — 迟到（课程开始之后才签到）
+ *   EARLY   — 早退（课程结束之前签退，同时 earlyLeave = true）
+ *   ABSENT  — 缺勤（通常由导入或手动标记）
+ *
+ * 【@PrePersist / @PreUpdate】
+ * 见 Student.java 中的详细说明，用法完全相同。
+ */
+
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

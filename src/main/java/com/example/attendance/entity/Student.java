@@ -27,6 +27,10 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // ← 自增主键（数据库自动生成）
     private Long id;
 
+    /** 关联的登录账号 ID（对应 User 表的 id，一个学生一个账号） */
+    @Column(name = "user_id", unique = true)
+    private Long userId;
+
     /**
      * 学号 —— 每个学生唯一，不能为空。
      * unique = true 会在数据库层面加唯一约束。
@@ -130,6 +134,9 @@ public class Student {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
     public String getStudentNo() { return studentNo; }
     public void setStudentNo(String studentNo) { this.studentNo = studentNo; }
