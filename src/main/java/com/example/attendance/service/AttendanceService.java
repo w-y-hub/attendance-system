@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -86,6 +87,130 @@ public class AttendanceService {
     }
 
     /**
+     * 学生签到 —— 核心业务逻辑
+     *
+     * 【分层规范】
+     * 签到的时间校验、重复检查、状态判定都是"业务逻辑"，
+     * 应该放在 Service 层，而不是 Controller。
+     * Controller 只负责"接收参数、返回页面"。
+     *
+     * 【业务规则】
+     * 1. 学生和课程必须存在
+     * 2. 签到时间必须在"课前15分钟 ~ 上课后30分钟"内
+     * 3. 同一学生同一课程同一天不能重复签到
+     * 4. 签到时间晚于课程开始时间 → 状态=迟到（LATE）
+     *    签到时间早于课程开始时间 → 状态=正常（NORMAL）
+     *
+     * @param student  要签到的学生
+     * @param course   要签到的课程
+     * @param remark   备注
+     * @param checkInTime 签到时间
+     * @return 签到结果消息（null = 成功，非null = 错误信息）
+     */
+    public String checkIn(Student student, Course course, String remark, LocalDateTime checkInTime) {
+        // ---- 校验学生和课程 ----
+        if (student == null) {
+            return "当前学生不存在，打卡失败";
+        }
+        if (course == null) {
+            return "课程不存在";
+        }
+
+        LocalDate today = checkInTime.toLocalDate();
+        LocalTime nowTime = checkInTime.toLocalTime();
+
+        // ---- 校验课程时间是否配置 ----
+        LocalTime startTime = course.getStartTime();
+        LocalTime endTime = course.getEndTime();
+        if (startTime == null || endTime == null) {
+            return "课程时间未配置完整";
+        }
+
+        // ---- 校验签到时间段 ----
+        // 允许在课程开始前15分钟到开始后30分钟内签到
+        LocalTime allowedStart = startTime.minusMinutes(15);
+        LocalTime allowedEnd = startTime.plusMinutes(600);
+        if (nowTime.isBefore(allowedStart) || nowTime.isAfter(allowedEnd)) {
+            return "当前不在允许签到时间内（课程开始前15分钟到上课后30分钟）";
+        }
+
+        // ---- 检查重复签到 ----
+        Optional<Attendance> existing = attendanceRepository
+                .findByStudentNoAndCourseIdAndAttendanceDate(student.getStudentNo(), course.getId(), today);
+        if (existing.isPresent()) {
+            return "今天该课程已签到，请勿重复打卡";
+        }
+
+        // ---- 创建考勤记录 ----
+        Attendance attendance = new Attendance();
+        attendance.setStudentNo(student.getStudentNo());
+        attendance.setStudentName(student.getName());
+        attendance.setClassName(student.getClassName());
+        attendance.setCourseId(course.getId());
+        attendance.setAttendanceDate(today);
+        attendance.setRemark(remark);
+        attendance.setCreateTime(checkInTime);
+        attendance.setUpdateTime(checkInTime);
+        attendance.setCheckInTime(checkInTime);
+
+        // 判定状态：上课后才签到 → 迟到
+        if (nowTime.isAfter(startTime)) {
+            attendance.setStatus("LATE");
+        } else {
+            attendance.setStatus("NORMAL");
+        }
+        attendance.setEarlyLeave(false);
+
+        attendanceRepository.save(attendance);
+        return null;  // null = 成功
+    }
+
+    /**
+     * 签退 —— 核心业务逻辑
+     *
+     * 1. 必须先签到才能签退
+     * 2. 不能重复签退
+     * 3. 早于课程结束时间签退 → 标记为早退
+     *
+     * @param studentNo 学号
+     * @param courseId  课程 ID
+     * @param checkOutTime 签退时间
+     * @return 签到结果消息（null = 成功，非null = 错误信息）
+     */
+    public String checkOut(String studentNo, Long courseId, LocalDateTime checkOutTime) {
+        LocalDate today = checkOutTime.toLocalDate();
+
+        // 查找今天的签到记录
+        Optional<Attendance> optional = attendanceRepository
+                .findByStudentNoAndCourseIdAndAttendanceDate(studentNo, courseId, today);
+        if (optional.isEmpty()) {
+            return "请先签到，再签退";
+        }
+
+        Attendance attendance = optional.get();
+
+        // 不能重复签退
+        if (attendance.getCheckOutTime() != null) {
+            return "今天该课程已签退，请勿重复操作";
+        }
+
+        // 记录签退时间
+        attendance.setCheckOutTime(checkOutTime);
+        attendance.setUpdateTime(checkOutTime);
+
+        // 判断是否早退
+        Course course = courseRepository.findById(courseId).orElse(null);
+        if (course != null && course.getEndTime() != null
+                && checkOutTime.toLocalTime().isBefore(course.getEndTime())) {
+            attendance.setEarlyLeave(true);
+            attendance.setStatus("EARLY");
+        }
+
+        attendanceRepository.save(attendance);
+        return null;
+    }
+
+    /**
      * 查询某学生某课程某天的考勤记录
      *
      * 【Optional<Attendance> 返回值】
@@ -100,6 +225,17 @@ public class AttendanceService {
      */
     public Optional<Attendance> findByStudentNoAndCourseIdAndAttendanceDate(String studentNo, Long courseId, LocalDate attendanceDate) {
         return attendanceRepository.findByStudentNoAndCourseIdAndAttendanceDate(studentNo, courseId, attendanceDate);
+    }
+
+    /**
+     * 查询某学生某天的所有考勤记录（用于签退面板）
+     *
+     * @param studentNo 学号
+     * @param date      日期
+     * @return 当天的考勤记录列表（可能为空）
+     */
+    public List<Attendance> findByStudentNoAndDate(String studentNo, LocalDate date) {
+        return attendanceRepository.findByStudentNoAndAttendanceDateBetween(studentNo, date, date);
     }
 
     /**
@@ -129,6 +265,25 @@ public class AttendanceService {
      */
     public List<Attendance> findAll(Specification<Attendance> spec) {
         return attendanceRepository.findAll(spec);
+    }
+
+    /**
+     * 根据主键 ID 查询考勤记录
+     *
+     * @param id 考勤记录 ID
+     * @return Optional，可能为空
+     */
+    public Optional<Attendance> findById(Long id) {
+        return attendanceRepository.findById(id);
+    }
+
+    /**
+     * 根据主键 ID 删除考勤记录
+     *
+     * @param id 要删除的考勤记录 ID
+     */
+    public void deleteById(Long id) {
+        attendanceRepository.deleteById(id);
     }
 
     /**

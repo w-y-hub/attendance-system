@@ -31,6 +31,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -79,96 +80,74 @@ public class AttendanceController {
     @GetMapping("/attendance/checkIn")
     public String checkInPage(Model model,
                               @RequestParam(required = false) String success,
-                              @RequestParam(required = false) String error) {
+                              @RequestParam(required = false) String error,
+                              Principal principal) {
         model.addAttribute("courses", courseService.findAll());
         model.addAttribute("success", success);
         model.addAttribute("error", error);
+
+        // 查出当前学生今天的签到记录（用于签退面板：只显示已签到课程）
+        if (principal != null) {
+            String studentNo = principal.getName();
+            LocalDate today = LocalDate.now();
+            List<Attendance> todayRecords = attendanceService
+                    .findByStudentNoAndDate(studentNo, today);
+
+            // 构建 courseId → courseName 的映射（因为 Attendance 只存了 courseId）
+            Map<Long, String> courseNameMap = new HashMap<>();
+            List<Course> allCourses = courseService.findAll();
+            for (Course c : allCourses) {
+                courseNameMap.put(c.getId(), c.getCourseName());
+            }
+
+            model.addAttribute("todayRecords", todayRecords);
+            model.addAttribute("courseNameMap", courseNameMap);
+            model.addAttribute("hasCheckIn", !todayRecords.isEmpty());
+        } else {
+            model.addAttribute("todayRecords", java.util.Collections.emptyList());
+            model.addAttribute("courseNameMap", java.util.Collections.emptyMap());
+            model.addAttribute("hasCheckIn", false);
+        }
+
         return "attendance-check-in";
     }
 
     /**
      * 处理签到请求（POST 请求）
      *
-     * 【业务流程】
-     * 1. 验证当前用户是否已登录（Principal 不能为空）
-     * 2. 从数据库查出学生信息和课程信息
-     * 3. 检查当前时间是否在允许签到的时间段内（课前15分钟 ~ 课后30分钟）
-     * 4. 检查今天该课程是否已签到（防止重复打卡）
-     * 5. 创建一条新的考勤记录并保存
-     * 6. 如果签到时间晚于课程开始时间，状态设为"迟到"（LATE），否则"正常"（NORMAL）
+     * 【分层架构规范】
+     * Controller 只做三件事：
+     *   1. 接收参数（从 HTTP 请求中提取数据）
+     *   2. 调用 Service 的业务方法
+     *   3. 返回页面（或重定向）
      *
-     * 【redirect 重定向】
-     * 签到成功后 redirect 回签到页面，并带上 success 参数显示成功提示。
-     * 重定向会刷新页面，防止用户按 F5 时重复提交签到请求。
+     * 签到的时间校验、重复检查、状态判定都是"业务逻辑"，
+     * 已全部移到 AttendanceService.checkIn() 中。
+     * 这样写的好处：以后如果要做"API 接口"（返回 JSON 不走页面），
+     * 可以直接复用 AttendanceService 的方法。
      *
      * @param courseId 签到对应的课程 ID
-     * @param remark   备注信息（可选，如"身体不适"）
-     * @param principal Spring Security 自动注入的当前登录用户
-     * @return 重定向到签到页面（带 success/error 参数）
+     * @param remark   备注信息
+     * @param principal 当前登录用户
+     * @return 重定向到签到页面
      */
     @PostMapping("/attendance/checkIn")
     public String checkIn(@RequestParam Long courseId,
                           @RequestParam(required = false) String remark,
                           Principal principal) {
 
-        if (principal == null) {
-            return "redirect:/login";
-        }
+        if (principal == null) return "redirect:/login";
 
+        // Controller 层：负责查数据
         String studentNo = principal.getName();
         Student student = studentService.findByStudentNo(studentNo);
-        if (student == null) {
-            return "redirect:/attendance/checkIn?error=" + encode("当前学生不存在，打卡失败");
-        }
-
         Course course = courseService.findById(courseId);
-        if (course == null) {
-            return "redirect:/attendance/checkIn?error=" + encode("课程不存在");
+
+        // Service 层：负责签到逻辑
+        String error = attendanceService.checkIn(student, course, remark, LocalDateTime.now());
+        if (error != null) {
+            return "redirect:/attendance/checkIn?error=" + encode(error);
         }
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate();
-        LocalTime nowTime = now.toLocalTime();
-
-        LocalTime startTime = course.getStartTime();
-        LocalTime endTime = course.getEndTime();
-
-        if (startTime == null || endTime == null) {
-            return "redirect:/attendance/checkIn?error=" + encode("课程时间未配置完整");
-        }
-
-        LocalTime allowedStart = startTime.minusMinutes(15);
-        LocalTime allowedEnd = startTime.plusMinutes(30);
-
-        if (nowTime.isBefore(allowedStart) || nowTime.isAfter(allowedEnd)) {
-            return "redirect:/attendance/checkIn?error=" + encode("当前不在允许签到时间内（课程开始前15分钟到开始后30分钟）");
-        }
-
-        Optional<Attendance> existing = attendanceService.findByStudentNoAndCourseIdAndAttendanceDate(studentNo, courseId, today);
-        if (existing.isPresent()) {
-            return "redirect:/attendance/checkIn?error=" + encode("今天该课程已签到，请勿重复打卡");
-        }
-
-        Attendance attendance = new Attendance();
-        attendance.setStudentNo(student.getStudentNo());
-        attendance.setStudentName(student.getName());
-        attendance.setClassName(student.getClassName());
-        attendance.setCourseId(courseId);
-        attendance.setAttendanceDate(today);
-        attendance.setRemark(remark);
-        attendance.setCreateTime(now);
-        attendance.setUpdateTime(now);
-        attendance.setCheckInTime(now);
-
-        if (nowTime.isAfter(startTime)) {
-            attendance.setStatus("LATE");
-        } else {
-            attendance.setStatus("NORMAL");
-        }
-
-        attendance.setEarlyLeave(false);
-
-        attendanceService.save(attendance);
 
         return "redirect:/attendance/checkIn?success=" + encode("签到成功");
     }
@@ -176,14 +155,10 @@ public class AttendanceController {
     /**
      * 处理签退请求（POST 请求）
      *
-     * 【业务流程】
-     * 1. 查出今天的签到记录（必须先签到才能签退）
-     * 2. 检查是否已签退（防止重复操作）
-     * 3. 记录签退时间，如果早于课程结束时间则标记为"早退"
-     *
-     * 【状态变化】
-     * 正常签退：status 保持 NORMAL，earlyLeave = false
-     * 早退签退：status 变为 EARLY，earlyLeave = true
+     * 【分层规范】
+     * 签退的校验逻辑（先签到？已签退？是否早退？）
+     * 已移到 AttendanceService.checkOut() 中。
+     * Controller 只负责取数据和返回页面。
      *
      * @param courseId 要签退的课程 ID
      * @param principal 当前登录用户
@@ -193,41 +168,13 @@ public class AttendanceController {
     public String checkOut(@RequestParam Long courseId,
                            Principal principal) {
 
-        if (principal == null) {
-            return "redirect:/login";
-        }
+        if (principal == null) return "redirect:/login";
 
         String studentNo = principal.getName();
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
-        LocalTime nowTime = now.toLocalTime();
-
-        Course course = courseService.findById(courseId);
-        if (course == null) {
-            return "redirect:/attendance/checkIn?error=" + encode("课程不存在");
+        String error = attendanceService.checkOut(studentNo, courseId, LocalDateTime.now());
+        if (error != null) {
+            return "redirect:/attendance/checkIn?error=" + encode(error);
         }
-
-        Optional<Attendance> optional = attendanceService.findByStudentNoAndCourseIdAndAttendanceDate(studentNo, courseId, today);
-        if (optional.isEmpty()) {
-            return "redirect:/attendance/checkIn?error=" + encode("请先签到，再签退");
-        }
-
-        Attendance attendance = optional.get();
-
-        if (attendance.getCheckOutTime() != null) {
-            return "redirect:/attendance/checkIn?error=" + encode("今天该课程已签退，请勿重复操作");
-        }
-
-        attendance.setCheckOutTime(now);
-
-        LocalTime endTime = course.getEndTime();
-        if (endTime != null && nowTime.isBefore(endTime)) {
-            attendance.setEarlyLeave(true);
-            attendance.setStatus("EARLY");
-        }
-
-        attendance.setUpdateTime(now);
-        attendanceService.save(attendance);
 
         return "redirect:/attendance/checkIn?success=" + encode("签退成功");
     }
@@ -347,6 +294,7 @@ public class AttendanceController {
         }
         model.addAttribute("courseMap", courseMap);
         model.addAttribute("courses", allCourses);
+        model.addAttribute("today", LocalDate.now().toString());
         model.addAttribute("success", success);
 
         return "attendance-list";
@@ -619,6 +567,53 @@ public class AttendanceController {
      * @param model        向模板传数据
      * @return 班级统计页面
      */
+    /**
+     * 删除自己的签到记录（POST 请求）
+     *
+     * 【功能】学生可以删除自己当天的签到记录。
+     * 常用于签错课程时的补救操作。
+     *
+     * 【安全设计】
+     * 1. 先查出考勤记录，验证 studentNo 是否等于当前登录用户
+     * 2. 只允许删除今天的记录（不能删除历史记录）
+     * 3. 只允许删除自己的记录（不能删除别人的）
+     *
+     * @param id        要删除的考勤记录 ID
+     * @param principal 当前登录用户
+     * @return 重定向到考勤列表页
+     */
+    @PostMapping("/attendance/delete/{id}")
+    public String deleteAttendance(@PathVariable Long id, Principal principal,
+                                   RedirectAttributes redirectAttributes) {
+        if (principal == null) return "redirect:/login";
+
+        // 查找考勤记录
+        Optional<Attendance> opt = attendanceService.findById(id);
+        if (opt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "考勤记录不存在");
+            return "redirect:/attendance/list";
+        }
+
+        Attendance attendance = opt.get();
+        String currentUser = principal.getName();
+
+        // 安全校验：只能删除自己的记录
+        if (!attendance.getStudentNo().equals(currentUser)) {
+            redirectAttributes.addFlashAttribute("error", "只能删除自己的考勤记录");
+            return "redirect:/attendance/list";
+        }
+
+        // 安全校验：只能删除今天的记录
+        if (!attendance.getAttendanceDate().equals(LocalDate.now())) {
+            redirectAttributes.addFlashAttribute("error", "只能删除今天的签到记录");
+            return "redirect:/attendance/list";
+        }
+
+        attendanceService.deleteById(id);
+        redirectAttributes.addFlashAttribute("success", "签到记录已删除");
+        return "redirect:/attendance/list";
+    }
+
     @GetMapping("/attendance/statistics/class")
     public String classStatisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
                                       @RequestParam(value = "endDate", required = false) String endDateStr,

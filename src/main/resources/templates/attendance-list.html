@@ -73,6 +73,7 @@
                         <th>状态</th>
                         <th>早退</th>
                         <th>备注</th>
+                        <th>操作</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -92,9 +93,23 @@
                         </td>
                         <td th:text="${record.earlyLeave != null and record.earlyLeave ? '是' : '否'}"></td>
                         <td th:text="${record.remark}"></td>
+                        <td>
+                            <!--
+                                 撤销签到按钮：只对今天的记录显示
+                                 Controller 传了 today 到 Model（格式 yyyy-MM-dd），
+                                 直接用 ${today} 和 record.attendanceDate 的格式化结果比较。
+                            -->
+                            <form th:action="@{/attendance/delete/{id}(id=${record.id})}"
+                                  th:if="${#temporals.format(record.attendanceDate, 'yyyy-MM-dd') == today}"
+                                  method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        style="padding:3px 10px;font-size:11px;"
+                                        onclick="return confirm('确定撤销此签到吗？');">撤销</button>
+                            </form>
+                        </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(records)}">
-                        <td colspan="7" style="text-align:center;color:var(--text-sub);padding:40px;">暂无考勤记录</td>
+                        <td colspan="8" style="text-align:center;color:var(--text-sub);padding:40px;">暂无考勤记录</td>
                     </tr>
                     </tbody>
                 </table>
