@@ -22,6 +22,16 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, J
 
     long countByStudentNoAndAttendanceDateBetweenAndStatusIn(String studentNo, LocalDate startDate, LocalDate endDate, Collection<String> statuses);
 
+    // ========== 按课程查询（教师用） ==========
+
+    List<Attendance> findByCourseIdAndAttendanceDateBetween(Long courseId, LocalDate startDate, LocalDate endDate);
+
+    long countByCourseIdAndAttendanceDateBetween(Long courseId, LocalDate startDate, LocalDate endDate);
+
+    long countByCourseIdAndAttendanceDateBetweenAndStatusIn(Long courseId, LocalDate startDate, LocalDate endDate, Collection<String> statuses);
+
+    long countByCourseIdAndAttendanceDateBetweenAndStatus(Long courseId, LocalDate startDate, LocalDate endDate, String status);
+
     // ========== 班级级统计 ==========
 
     List<Attendance> findByClassNameAndAttendanceDateBetween(String className, LocalDate startDate, LocalDate endDate);

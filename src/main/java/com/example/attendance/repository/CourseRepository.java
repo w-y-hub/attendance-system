@@ -17,4 +17,7 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     /** 根据授课教师ID查找课程 */
     List<Course> findByTeacherId(Long teacherId);
+
+    /** 根据上课班级查找课程（用于统计期望出勤） */
+    List<Course> findByClassName(String className);
 }

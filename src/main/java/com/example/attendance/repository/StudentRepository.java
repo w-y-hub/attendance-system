@@ -35,5 +35,8 @@ public interface StudentRepository extends JpaRepository<Student, Long>,
     // 判断学号是否存在
     boolean existsByStudentNo(String studentNo);
 
+    // 按姓名模糊查询（用于统计页搜索）
+    List<Student> findByNameContaining(String name);
+
 
 }

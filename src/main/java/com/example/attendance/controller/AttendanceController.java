@@ -17,12 +17,11 @@ package com.example.attendance.controller;
 
 import com.example.attendance.dto.AttendanceStatisticsPageDto;
 import com.example.attendance.dto.ImportResult;
-import com.example.attendance.entity.Attendance;
-import com.example.attendance.entity.Course;
-import com.example.attendance.entity.Student;
+import com.example.attendance.entity.*;
 import com.example.attendance.service.AttendanceService;
 import com.example.attendance.service.CourseService;
 import com.example.attendance.service.StudentService;
+import com.example.attendance.service.UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,7 +43,6 @@ import java.security.Principal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 
 @Controller
@@ -53,13 +51,16 @@ public class AttendanceController {
     private final AttendanceService attendanceService;
     private final StudentService studentService;
     private final CourseService courseService;
+    private final UserService userService;
 
     public AttendanceController(AttendanceService attendanceService,
                                 StudentService studentService,
-                                CourseService courseService) {
+                                CourseService courseService,
+                                UserService userService) {
         this.attendanceService = attendanceService;
         this.studentService = studentService;
         this.courseService = courseService;
+        this.userService = userService;
     }
 
     /**
@@ -138,8 +139,14 @@ public class AttendanceController {
 
         if (principal == null) return "redirect:/login";
 
-        // Controller 层：负责查数据
+        // 角色检查：只有学生可以签到
         String studentNo = principal.getName();
+        User loginUser = userService.findByUsername(studentNo);
+        if (loginUser != null && loginUser.getRole() != Role.STUDENT) {
+            return "redirect:/attendance/checkIn?error=" + encode("只有学生账号才能签到");
+        }
+
+        // Controller 层：负责查数据
         Student student = studentService.findByStudentNo(studentNo);
         Course course = courseService.findById(courseId);
 
@@ -222,6 +229,11 @@ public class AttendanceController {
 
         String studentNo = principal.getName();
 
+        // 【角色感知】ADMIN 看全部，STUDENT 只看自己
+        User currentUser = userService.findByUsername(studentNo);
+        String role = (currentUser != null) ? currentUser.getRole().name() : "STUDENT";
+        boolean isAdmin = "ADMIN".equals(role);
+
         LocalDate start = null;
         LocalDate end = null;
 
@@ -250,8 +262,10 @@ public class AttendanceController {
             }
         }
 
-        Specification<Attendance> spec = (root, query, cb) ->
-                cb.equal(root.get("studentNo"), studentNo);
+        // ==== 角色感知：ADMIN 看全部，STUDENT 只看自己 ====
+        Specification<Attendance> spec = isAdmin
+                ? Specification.where(null)
+                : (root, query, cb) -> cb.equal(root.get("studentNo"), studentNo);
 
         if (start != null) {
             LocalDate finalStart = start;
@@ -337,6 +351,10 @@ public class AttendanceController {
 
         String studentNo = principal.getName();
 
+        // ==== 角色感知：ADMIN 看全部 ====
+        User expUser = userService.findByUsername(studentNo);
+        boolean expIsAdmin = expUser != null && "ADMIN".equals(expUser.getRole().name());
+
         LocalDate start = null;
         LocalDate end = null;
 
@@ -365,8 +383,9 @@ public class AttendanceController {
             }
         }
 
-        Specification<Attendance> spec = (root, query, cb) ->
-                cb.equal(root.get("studentNo"), studentNo);
+        Specification<Attendance> spec = expIsAdmin
+                ? Specification.where(null)
+                : (root, query, cb) -> cb.equal(root.get("studentNo"), studentNo);
 
         if (start != null) {
             LocalDate finalStart = start;
@@ -509,6 +528,8 @@ public class AttendanceController {
     @GetMapping("/attendance/statistics")
     public String statisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
                                  @RequestParam(value = "endDate", required = false) String endDateStr,
+                                 @RequestParam(value = "searchStudentNo", required = false) String searchStudentNo,
+                                 @RequestParam(value = "searchName", required = false) String searchName,
                                  Principal principal,
                                  Model model) {
 
@@ -516,7 +537,30 @@ public class AttendanceController {
             return "redirect:/login";
         }
 
-        String studentNo = principal.getName();
+        String loginUser = principal.getName();
+
+        // 【角色感知】ADMIN/TEACHER 可以查任意学生，STUDENT 只能查自己
+        User curUser = userService.findByUsername(loginUser);
+        String role = curUser != null ? curUser.getRole().name() : "STUDENT";
+        boolean canSearchAll = "ADMIN".equals(role) || "TEACHER".equals(role);
+
+        // 确定要查询哪个学生
+        String targetStudentNo = loginUser;  // 默认查自己
+        if (canSearchAll && searchStudentNo != null && !searchStudentNo.isEmpty()) {
+            targetStudentNo = searchStudentNo;
+        }
+
+        // 如果按姓名搜索，查出匹配的学生列表
+        if (canSearchAll && searchName != null && !searchName.isEmpty()) {
+            List<Student> matchedStudents = studentService.findByNameContaining(searchName);
+            model.addAttribute("matchedStudents", matchedStudents);
+        }
+
+        model.addAttribute("searchStudentNo", searchStudentNo);
+        model.addAttribute("searchName", searchName);
+        model.addAttribute("userRole", role);
+        model.addAttribute("todayStr", LocalDate.now().toString());
+
         AttendanceStatisticsPageDto statistics = new AttendanceStatisticsPageDto();
 
         model.addAttribute("startDate", startDateStr);
@@ -538,7 +582,7 @@ public class AttendanceController {
                 return "attendance-statistics";
             }
 
-            statistics = attendanceService.getAttendanceStatistics(studentNo, startDate, endDate);
+            statistics = attendanceService.getAttendanceStatistics(targetStudentNo, startDate, endDate);
             model.addAttribute("statistics", statistics);
 
         } catch (Exception e) {
@@ -567,6 +611,30 @@ public class AttendanceController {
      * @param model        向模板传数据
      * @return 班级统计页面
      */
+    @GetMapping("/attendance/statistics/class")
+    public String classStatisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
+                                      @RequestParam(value = "endDate", required = false) String endDateStr,
+                                      Model model) {
+        model.addAttribute("startDate", startDateStr);
+        model.addAttribute("endDate", endDateStr);
+
+        if (startDateStr != null && !startDateStr.trim().isEmpty()
+                && endDateStr != null && !endDateStr.trim().isEmpty()) {
+            try {
+                LocalDate startDate = LocalDate.parse(startDateStr);
+                LocalDate endDate = LocalDate.parse(endDateStr);
+                if (!startDate.isAfter(endDate)) {
+                    model.addAttribute("classStats", attendanceService.getClassStatistics(startDate, endDate));
+                } else {
+                    model.addAttribute("errorMessage", "开始日期不能晚于结束日期");
+                }
+            } catch (Exception e) {
+                model.addAttribute("errorMessage", "日期格式不正确");
+            }
+        }
+        return "attendance-statistics-class";
+    }
+
     /**
      * 删除自己的签到记录（POST 请求）
      *
@@ -612,30 +680,6 @@ public class AttendanceController {
         attendanceService.deleteById(id);
         redirectAttributes.addFlashAttribute("success", "签到记录已删除");
         return "redirect:/attendance/list";
-    }
-
-    @GetMapping("/attendance/statistics/class")
-    public String classStatisticsPage(@RequestParam(value = "startDate", required = false) String startDateStr,
-                                      @RequestParam(value = "endDate", required = false) String endDateStr,
-                                      Model model) {
-        model.addAttribute("startDate", startDateStr);
-        model.addAttribute("endDate", endDateStr);
-
-        if (startDateStr != null && !startDateStr.trim().isEmpty()
-                && endDateStr != null && !endDateStr.trim().isEmpty()) {
-            try {
-                LocalDate startDate = LocalDate.parse(startDateStr);
-                LocalDate endDate = LocalDate.parse(endDateStr);
-                if (!startDate.isAfter(endDate)) {
-                    model.addAttribute("classStats", attendanceService.getClassStatistics(startDate, endDate));
-                } else {
-                    model.addAttribute("errorMessage", "开始日期不能晚于结束日期");
-                }
-            } catch (Exception e) {
-                model.addAttribute("errorMessage", "日期格式不正确");
-            }
-        }
-        return "attendance-statistics-class";
     }
 
     /**

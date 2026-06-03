@@ -20,10 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.YearMonth;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -236,6 +233,18 @@ public class AttendanceService {
      */
     public List<Attendance> findByStudentNoAndDate(String studentNo, LocalDate date) {
         return attendanceRepository.findByStudentNoAndAttendanceDateBetween(studentNo, date, date);
+    }
+
+    /**
+     * 查询某课程在日期范围内的考勤记录（教师查看班级考勤用）
+     *
+     * @param courseId  课程 ID
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 考勤记录列表
+     */
+    public List<Attendance> findByCourseIdAndDateRange(Long courseId, LocalDate startDate, LocalDate endDate) {
+        return attendanceRepository.findByCourseIdAndAttendanceDateBetween(courseId, startDate, endDate);
     }
 
     /**
@@ -486,18 +495,46 @@ public class AttendanceService {
         pageDto.setStartDate(startDate.toString());
         pageDto.setEndDate(endDate.toString());
 
-        long totalCount = attendanceRepository.countByStudentNoAndAttendanceDateBetween(studentNo, startDate, endDate);
-        long presentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatusIn(
+        // ---- 数据库已有统计（保留） ----
+        long dbPresentCnt = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatusIn(
                 studentNo, startDate, endDate, PRESENT_STATUSES
         );
-        long absentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatus(
+        long dbAbsentCnt = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatus(
                 studentNo, startDate, endDate, ABSENT_STATUS
         );
 
-        pageDto.setRangeTotalCount(totalCount);
-        pageDto.setRangePresentCount(presentCount);
-        pageDto.setRangeAbsentCount(absentCount);
-        pageDto.setRangeAttendanceRate(calculateRate(presentCount, totalCount));
+        // ---- 遍历每门课×每天：有记录=出勤，无记录=缺勤 ----
+        long rangeTotal = 0;
+        long rangePresent = 0;
+        Student student = studentRepository.findByStudentNo(studentNo);
+        if (student != null && student.getClassName() != null) {
+            List<Course> classCourses = courseRepository.findByClassName(student.getClassName());
+            if (!classCourses.isEmpty()) {
+                LocalDate current = startDate;
+                while (!current.isAfter(endDate)) {
+                    if (current.getDayOfWeek() != DayOfWeek.SATURDAY && current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                        for (Course course : classCourses) {
+                            rangeTotal++;
+                            Optional<Attendance> record = attendanceRepository
+                                    .findByStudentNoAndCourseIdAndAttendanceDate(studentNo, course.getId(), current);
+                            if (record.isPresent()) {
+                                rangePresent++;
+                            }
+                        }
+                    }
+                    current = current.plusDays(1);
+                }
+            }
+        }
+        if (rangeTotal == 0) {
+            rangeTotal = dbPresentCnt + dbAbsentCnt;
+            rangePresent = dbPresentCnt;
+        }
+
+        pageDto.setRangeTotalCount(rangeTotal);
+        pageDto.setRangePresentCount(rangePresent);
+        pageDto.setRangeAbsentCount(rangeTotal - rangePresent);
+        pageDto.setRangeAttendanceRate(calculateRate(rangePresent, rangeTotal));
 
         pageDto.setWeeklyStatistics(buildWeeklyStatistics(studentNo, startDate, endDate));
         pageDto.setMonthlyStatistics(buildMonthlyStatistics(studentNo, startDate, endDate));
@@ -577,21 +614,65 @@ public class AttendanceService {
         return list;
     }
 
+    /**
+     * 构建单个统计区间的数据（按周或按月）
+     *
+     * 【改进后的统计逻辑】
+     * 之前：只统计 attendance 表中已有的记录 → 没打卡的"失踪"学生不被计入
+     * 现在：基于课程表计算"应有出勤次数" → 有课但没打卡 = 缺勤
+     *
+     * 计算步骤：
+     * 1. 查出学生所在的班级（className）
+     * 2. 查出该班级的所有课程
+     * 3. 遍历区间内的每个工作日（周一到周五）：
+     *    - 对于每门课程，查询是否有考勤记录
+     *    - 有记录 → 按实际状态统计（NORMAL/LATE/EARLY 算出席）
+     *    - 无记录 → 按缺勤计
+     */
     private AttendanceStatisticsItemDto buildStatisticsItem(String studentNo, LocalDate startDate, LocalDate endDate, String label) {
-        long totalCount = attendanceRepository.countByStudentNoAndAttendanceDateBetween(studentNo, startDate, endDate);
-        long presentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatusIn(
+        // ---- 数据库已有统计（保留查询，后续可复用） ----
+        long dbPresentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatusIn(
                 studentNo, startDate, endDate, PRESENT_STATUSES
         );
-        long absentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatus(
+        long dbAbsentCount = attendanceRepository.countByStudentNoAndAttendanceDateBetweenAndStatus(
                 studentNo, startDate, endDate, ABSENT_STATUS
         );
 
+        // ---- 基于课程表：有记录=出勤，无记录=缺勤 ----
+        Student student = studentRepository.findByStudentNo(studentNo);
+        long total = 0;
+        long present = 0;
+
+        if (student != null && student.getClassName() != null) {
+            List<Course> classCourses = courseRepository.findByClassName(student.getClassName());
+            if (!classCourses.isEmpty()) {
+                LocalDate current = startDate;
+                while (!current.isAfter(endDate)) {
+                    if (current.getDayOfWeek() != DayOfWeek.SATURDAY && current.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                        for (Course course : classCourses) {
+                            total++;
+                            Optional<Attendance> record = attendanceRepository
+                                    .findByStudentNoAndCourseIdAndAttendanceDate(studentNo, course.getId(), current);
+                            if (record.isPresent()) {
+                                present++;
+                            }
+                        }
+                    }
+                    current = current.plusDays(1);
+                }
+            }
+        }
+        if (total == 0) {
+            total = dbPresentCount + dbAbsentCount;
+            present = dbPresentCount;
+        }
+
         AttendanceStatisticsItemDto item = new AttendanceStatisticsItemDto();
         item.setLabel(label);
-        item.setTotalCount(totalCount);
-        item.setPresentCount(presentCount);
-        item.setAbsentCount(absentCount);
-        item.setAttendanceRate(calculateRate(presentCount, totalCount));
+        item.setTotalCount(total);
+        item.setPresentCount(present);
+        item.setAbsentCount(total - present);
+        item.setAttendanceRate(calculateRate(present, total));
 
         return item;
     }
@@ -601,6 +682,48 @@ public class AttendanceService {
             return 0.0;
         }
         return Math.round(presentCount * 10000.0 / totalCount) / 100.0;
+    }
+
+    /**
+     * 获取某门课程的考勤统计（教师用）
+     *
+     * @param courseId  课程 ID
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @param totalStudents 该课程班级的总人数
+     * @return 统计结果 Map，含 expectedTotal、presentCount、absentCount、attendanceRate
+     */
+    public Map<String, Object> getCourseAttendanceStats(Long courseId, LocalDate startDate, LocalDate endDate, int totalStudents) {
+        Map<String, Object> result = new HashMap<>();
+
+        long dbPresentCount = attendanceRepository.countByCourseIdAndAttendanceDateBetweenAndStatusIn(
+                courseId, startDate, endDate, PRESENT_STATUSES);
+        long dbAbsentCount = attendanceRepository.countByCourseIdAndAttendanceDateBetweenAndStatus(
+                courseId, startDate, endDate, ABSENT_STATUS);
+
+        // 计算期望总次数 = 总人数 × 工作日天数
+        int weekdays = 0;
+        LocalDate cur = startDate;
+        while (!cur.isAfter(endDate)) {
+            if (cur.getDayOfWeek() != DayOfWeek.SATURDAY && cur.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                weekdays++;
+            }
+            cur = cur.plusDays(1);
+        }
+        long expectedTotal = (long) totalStudents * weekdays;
+
+        // 如果期望次数小于实际记录数，用实际记录数
+        long total = Math.max(expectedTotal, dbPresentCount + dbAbsentCount);
+        long absent = total - dbPresentCount;
+
+        result.put("expectedTotal", total);
+        result.put("presentCount", dbPresentCount);
+        result.put("absentCount", absent);
+        result.put("attendanceRate", calculateRate(dbPresentCount, total));
+        result.put("totalStudents", totalStudents);
+        result.put("weekdays", weekdays);
+
+        return result;
     }
 
     // ========== 班级级统计 ==========

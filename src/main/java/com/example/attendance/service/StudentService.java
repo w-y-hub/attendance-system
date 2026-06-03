@@ -114,6 +114,11 @@ public class StudentService {
         return studentRepository.findByStudentNo(studentNo);
     }
 
+    /** 按姓名模糊查询学生（用于统计页搜索） */
+    public List<Student> findByNameContaining(String name) {
+        return studentRepository.findByNameContaining(name);
+    }
+
     // ===================== Excel 批量导入 =====================
 
     /**

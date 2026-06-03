@@ -13,11 +13,11 @@
             <form th:action="@{/attendance/statistics}" method="get" style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
                 <div>
                     <label class="form-label">开始日期</label>
-                    <input type="date" class="form-input" name="startDate" th:value="${startDate}" style="width:200px;">
+                    <input type="date" class="form-input" name="startDate" th:value="${startDate != null ? startDate : todayStr}" style="width:200px;">
                 </div>
                 <div>
                     <label class="form-label">结束日期</label>
-                    <input type="date" class="form-input" name="endDate" th:value="${endDate}" style="width:200px;">
+                    <input type="date" class="form-input" name="endDate" th:value="${endDate != null ? endDate : todayStr}" style="width:200px;">
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary">查询统计</button>
@@ -26,6 +26,37 @@
             <div class="mt-3 d-flex gap-3">
                 <a th:href="@{/attendance/statistics}" class="btn btn-primary">📊 个人统计</a>
                 <a th:href="@{/attendance/statistics/class}" class="btn btn-info">🏫 班级统计</a>
+            </div>
+
+            <!-- 按学号/姓名搜索（仅 ADMIN/TEACHER 可见） -->
+            <div class="mt-3" th:if="${userRole == 'ADMIN' or userRole == 'TEACHER'}">
+                <hr>
+                <p style="font-size:13px;color:var(--text-sub);margin-bottom:8px;">🔍 查询指定学生的考勤统计</p>
+                <form th:action="@{/attendance/statistics}" method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                    <div>
+                        <label class="form-label" style="font-size:12px;">按学号</label>
+                        <input type="text" class="form-input" name="searchStudentNo" th:value="${searchStudentNo}" placeholder="输入学号" style="width:160px;">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size:12px;">按姓名</label>
+                        <input type="text" class="form-input" name="searchName" th:value="${searchName}" placeholder="输入姓名" style="width:160px;">
+                    </div>
+                    <!-- 保留日期参数 -->
+                    <input type="hidden" name="startDate" th:value="${startDate}">
+                    <input type="hidden" name="endDate" th:value="${endDate}">
+                    <div>
+                        <button type="submit" class="btn btn-info" style="font-size:13px;">查询</button>
+                    </div>
+                </form>
+                <!-- 按姓名搜索的匹配结果 -->
+                <div th:if="${matchedStudents != null and !#lists.isEmpty(matchedStudents)}" style="margin-top:8px;">
+                    <span style="font-size:12px;color:var(--text-sub);">匹配的学生：</span>
+                    <span th:each="s : ${matchedStudents}" style="margin-right:12px;">
+                        <a th:href="@{/attendance/statistics(searchStudentNo=${s.studentNo}, startDate=${startDate}, endDate=${endDate})}"
+                           style="font-size:13px;color:var(--primary);text-decoration:none;"
+                           th:text="${s.studentNo} + ' ' + ${s.name}">42211077 孙涛涛</a>
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -64,75 +95,59 @@
         </div>
     </div>
 
-    <!-- 图表 -->
-    <div class="card" th:if="${statistics != null and !#lists.isEmpty(statistics.weeklyStatistics)}">
-        <div class="card-header">📈 出勤率趋势图</div>
-        <div class="card-body">
-            <canvas id="attendanceChart" height="100"></canvas>
+    <!-- ===== 标签页导航：周统计 / 月统计 / 图表 ===== -->
+    <div class="card" th:if="${statistics != null and statistics.startDate != null}">
+        <div class="card-header">
+            <div style="display:flex;gap:4px;">
+                <button type="button" class="tab-btn active" onclick="switchTab('weekTab', this)"
+                        style="padding:6px 18px;border:1px solid var(--border);border-radius:8px;background:var(--primary);color:#fff;cursor:pointer;font-size:13px;">📅 按周</button>
+                <button type="button" class="tab-btn" onclick="switchTab('monthTab', this)"
+                        style="padding:6px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-main);cursor:pointer;font-size:13px;">📅 按月</button>
+                <button type="button" class="tab-btn" onclick="switchTab('chartTab', this)"
+                        style="padding:6px 18px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);color:var(--text-main);cursor:pointer;font-size:13px;">📈 图表</button>
+            </div>
         </div>
-    </div>
 
-    <!-- 按周统计 -->
-    <div class="card" th:if="${statistics != null}">
-        <div class="card-header">📅 按周统计</div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>周区间</th>
-                        <th>总次数</th>
-                        <th>出勤</th>
-                        <th>缺勤</th>
-                        <th>出勤率</th>
-                    </tr>
-                    </thead>
+        <!-- 按周统计 -->
+        <div id="weekTab" class="tab-content" style="display:block;">
+            <div class="table-responsive" th:if="${!#lists.isEmpty(statistics.weeklyStatistics)}">
+                <table><thead><tr><th>周区间</th><th>总次数</th><th>出勤</th><th>缺勤</th><th>出勤率</th></tr></thead>
                     <tbody>
-                    <tr th:each="item : ${statistics.weeklyStatistics}">
-                        <td th:text="${item.label}"></td>
-                        <td th:text="${item.totalCount}"></td>
-                        <td th:text="${item.presentCount}"></td>
-                        <td th:text="${item.absentCount}"></td>
-                        <td><span class="badge badge-success" th:text="${item.attendanceRate + '%'}"></span></td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(statistics.weeklyStatistics)}">
-                        <td colspan="5" style="text-align:center;color:var(--text-sub);padding:30px;">暂无数据</td>
-                    </tr>
+                        <tr th:each="item : ${statistics.weeklyStatistics}">
+                            <td th:text="${item.label}"></td>
+                            <td th:text="${item.totalCount}"></td>
+                            <td th:text="${item.presentCount}"></td>
+                            <td th:text="${item.absentCount}"></td>
+                            <td><span class="badge badge-success" th:text="${item.attendanceRate + '%'}"></span></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+            <div th:if="${#lists.isEmpty(statistics.weeklyStatistics)}" style="text-align:center;padding:30px;color:var(--text-sub);">暂无周统计数据</div>
         </div>
-    </div>
 
-    <!-- 按月统计 -->
-    <div class="card" th:if="${statistics != null}">
-        <div class="card-header">📅 按月统计</div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>月份</th>
-                        <th>总次数</th>
-                        <th>出勤</th>
-                        <th>缺勤</th>
-                        <th>出勤率</th>
-                    </tr>
-                    </thead>
+        <!-- 按月统计 -->
+        <div id="monthTab" class="tab-content" style="display:none;">
+            <div class="table-responsive" th:if="${!#lists.isEmpty(statistics.monthlyStatistics)}">
+                <table><thead><tr><th>月份</th><th>总次数</th><th>出勤</th><th>缺勤</th><th>出勤率</th></tr></thead>
                     <tbody>
-                    <tr th:each="item : ${statistics.monthlyStatistics}">
-                        <td th:text="${item.label}"></td>
-                        <td th:text="${item.totalCount}"></td>
-                        <td th:text="${item.presentCount}"></td>
-                        <td th:text="${item.absentCount}"></td>
-                        <td><span class="badge badge-success" th:text="${item.attendanceRate + '%'}"></span></td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(statistics.monthlyStatistics)}">
-                        <td colspan="5" style="text-align:center;color:var(--text-sub);padding:30px;">暂无数据</td>
-                    </tr>
+                        <tr th:each="item : ${statistics.monthlyStatistics}">
+                            <td th:text="${item.label}"></td>
+                            <td th:text="${item.totalCount}"></td>
+                            <td th:text="${item.presentCount}"></td>
+                            <td th:text="${item.absentCount}"></td>
+                            <td><span class="badge badge-success" th:text="${item.attendanceRate + '%'}"></span></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+            <div th:if="${#lists.isEmpty(statistics.monthlyStatistics)}" style="text-align:center;padding:30px;color:var(--text-sub);">暂无月统计数据</div>
+        </div>
+
+        <!-- 图表 -->
+        <div id="chartTab" class="tab-content" style="display:none;">
+            <canvas id="attendanceChart" height="80" th:if="${!#lists.isEmpty(statistics.weeklyStatistics)}"></canvas>
+            <div th:if="${#lists.isEmpty(statistics.weeklyStatistics)}" style="text-align:center;padding:30px;color:var(--text-sub);">暂无图表数据</div>
         </div>
     </div>
 
@@ -141,6 +156,25 @@
 
 <div th:replace="~{fragments/common :: footer}"></div>
 
+<script>
+    /* 标签页切换函数 */
+    function switchTab(tabId, btn) {
+        // 隐藏所有标签内容
+        document.querySelectorAll('.tab-content').forEach(function(el) {
+            el.style.display = 'none';
+        });
+        // 显示选中的标签
+        document.getElementById(tabId).style.display = 'block';
+        // 重置所有按钮样式
+        document.querySelectorAll('.tab-btn').forEach(function(b) {
+            b.style.background = 'var(--bg-card)';
+            b.style.color = 'var(--text-main)';
+        });
+        // 高亮当前按钮
+        btn.style.background = 'var(--primary)';
+        btn.style.color = '#fff';
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script th:if="${statistics != null and !#lists.isEmpty(statistics.weeklyStatistics)}">
     (function() {

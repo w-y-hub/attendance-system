@@ -58,11 +58,13 @@
                 <p>查看、新增、编辑和导入学生信息。</p>
             </a>
 
-            <a th:href="@{/logout}" class="module-card" style="border-color:#fecaca;">
-                <div class="module-icon" style="background:#fef2f2;color:var(--danger);">🚪</div>
-                <h3>退出登录</h3>
-                <p>安全退出当前账号，返回登录页面。</p>
-            </a>
+            <form th:action="@{/logout}" method="post" style="display:contents;">
+                <button type="submit" class="module-card" style="border-color:#fecaca;cursor:pointer;width:100%;text-align:left;font-family:inherit;font-size:inherit;">
+                    <div class="module-icon" style="background:#fef2f2;color:var(--danger);">🚪</div>
+                    <h3>退出登录</h3>
+                    <p>安全退出当前账号，返回登录页面。</p>
+                </button>
+            </form>
         </div>
     </div>
 </div>

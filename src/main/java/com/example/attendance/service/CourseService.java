@@ -37,6 +37,11 @@ public class CourseService {
         return courseRepository.findByTeacherId(teacherId);
     }
 
+    /** 根据班级名称查询课程（用于统计期望出勤） */
+    public List<Course> findByClassName(String className) {
+        return courseRepository.findByClassName(className);
+    }
+
     /** 保存课程（新增或更新） */
     public Course save(Course course) {
         return courseRepository.save(course);

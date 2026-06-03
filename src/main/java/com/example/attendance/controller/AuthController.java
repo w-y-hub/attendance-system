@@ -21,7 +21,9 @@ package com.example.attendance.controller;
  */
 
 import com.example.attendance.entity.Role;
+import com.example.attendance.entity.Student;
 import com.example.attendance.entity.User;
+import com.example.attendance.service.StudentService;
 import com.example.attendance.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,9 @@ public class AuthController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private StudentService studentService;
 
     @PostMapping("/register")
     public String register(@RequestParam String username,
@@ -83,6 +88,21 @@ public class AuthController {
         }
 
         userService.register(user);
+        
+        // 【关键】注册学生账号时，同时创建 student 记录（否则签到会提示"学生不存在"）
+        if (user.getRole() == Role.STUDENT) {
+            Student student = new Student();
+            student.setStudentNo(username.trim());    // 用用户名（学号）作为 studentNo
+            student.setName(username.trim());          // 默认为用户名，可在学生管理中修改
+            student.setStatus(1);                      // 默认启用
+            // 关联 User 账号
+            User savedUser = userService.findByUsername(username.trim());
+            if (savedUser != null) {
+                student.setUserId(savedUser.getId());
+            }
+            studentService.save(student);
+        }
+        
         model.addAttribute("successMsg", "注册成功，请登录");
         return "login";
     }
