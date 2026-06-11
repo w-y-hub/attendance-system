@@ -32,15 +32,19 @@ public class UserService {
 
     /**
      * 注册新用户
+     *
+     * 【重要】返回保存后的 User 对象，因为 JPA 的 save() 会回填自增 ID。
+     * 调用方需要用返回值的 getId() 来关联 Student 记录的 userId。
+     * 不能直接用参数 user.getId()，因为在当前事务中 ID 可能还未回填。
+     *
      * @param user 前端提交的用户信息（密码是明文）
+     * @return 保存后的 User（含自增 id）
      */
-    public void register(User user) {
-        // 关键步骤：用 BCrypt 加密密码，绝对不能存明文！
+    public User register(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        // 默认角色为学生
         if (user.getRole() == null) user.setRole(Role.STUDENT);
         user.setEnabled(true);
-        userRepository.save(user);
+        return userRepository.save(user);  // ← 返回保存后的实体，ID 已回填
     }
 
     /** 根据用户名查找用户（登录时使用） */

@@ -15,6 +15,7 @@ package com.example.attendance.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+
 import java.time.LocalDateTime;
 
 @Entity                     // ← 告诉 Spring 这是一个 JPA 实体类
@@ -40,12 +41,10 @@ public class Student {
     private String studentNo;
 
     /** 姓名 */
-    @NotBlank(message = "姓名不能为空")
-    @Column(name = "name", nullable = false, length = 50)
+    @Column(name = "name", length = 50)
     private String name;
 
     /** 性别 */
-    @NotBlank(message = "性别不能为空")
     @Column(name = "gender", length = 10)
     private String gender;
 
@@ -75,8 +74,7 @@ public class Student {
     // ===================== 原有可选字段 =====================
 
     /** 班级（如：2022级计算机科学与技术） */
-    @NotBlank(message = "班级不能为空")
-    @Column(name = "class_name", nullable = false, length = 50)
+    @Column(name = "class_name", length = 50)
     private String className;
 
     /** 状态：1=正常，0=禁用（默认启用） */

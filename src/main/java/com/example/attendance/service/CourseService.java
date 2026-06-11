@@ -32,6 +32,11 @@ public class CourseService {
         return courseRepository.findById(id).orElse(null);
     }
 
+    /** 根据课程名称查找（用于注册时自动分配班级） */
+    public List<Course> findByCourseName(String courseName) {
+        return courseRepository.findByCourseName(courseName);
+    }
+
     /** 根据教师ID查询该教师的课程 */
     public List<Course> findByTeacherId(Long teacherId) {
         return courseRepository.findByTeacherId(teacherId);

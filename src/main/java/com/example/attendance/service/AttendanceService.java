@@ -124,11 +124,11 @@ public class AttendanceService {
         }
 
         // ---- 校验签到时间段 ----
-        // 允许在课程开始前15分钟到开始后30分钟内签到
-        LocalTime allowedStart = startTime.minusMinutes(15);
-        LocalTime allowedEnd = startTime.plusMinutes(600);
+        // 定向越野课程：课前30分钟到课后4小时内均可签到
+        LocalTime allowedStart = startTime.minusMinutes(240);
+        LocalTime allowedEnd = startTime.plusMinutes(240);
         if (nowTime.isBefore(allowedStart) || nowTime.isAfter(allowedEnd)) {
-            return "当前不在允许签到时间内（课程开始前15分钟到上课后30分钟）";
+            return "当前不在允许签到时间内（课程开始前4小时到课后4小时）";
         }
 
         // ---- 检查重复签到 ----

@@ -28,16 +28,18 @@
         <p style="color:var(--text-sub);font-size:13px;margin-bottom:16px;">选择一项功能开始操作</p>
 
         <div class="module-grid">
-            <a th:href="@{/attendance/checkIn}" class="module-card">
+            <!-- 考勤打卡（仅 STUDENT 可见） -->
+            <a th:if="${userRole == 'STUDENT'}" th:href="@{/attendance/checkIn}" class="module-card">
                 <div class="module-icon" style="background:#eef2ff;color:var(--primary);">📌</div>
                 <h3>考勤打卡</h3>
                 <p>选择课程进行签到或签退操作。</p>
             </a>
 
+            <!-- 考勤记录（STUDENT 看自己的，ADMIN 看全部的） -->
             <a th:href="@{/attendance/list}" class="module-card">
                 <div class="module-icon" style="background:#ecfdf3;color:var(--success);">📋</div>
-                <h3>考勤记录</h3>
-                <p>查看个人历史考勤记录，支持多条件筛选。</p>
+                <h3 th:text="${userRole == 'ADMIN' ? '全部考勤' : '我的考勤'}">考勤记录</h3>
+                <p>查看考勤记录，支持多条件筛选。</p>
             </a>
 
             <a th:href="@{/attendance/statistics}" class="module-card">
@@ -46,13 +48,15 @@
                 <p>按周/月度查看出勤率和统计图表。</p>
             </a>
 
-            <a th:href="@{/attendance/import}" class="module-card">
+            <!-- 考勤导入（仅 ADMIN/TEACHER 可见） -->
+            <a th:if="${userRole == 'ADMIN' or userRole == 'TEACHER'}" th:href="@{/attendance/import}" class="module-card">
                 <div class="module-icon" style="background:#fff7ed;color:#c2410c;">📥</div>
                 <h3>考勤导入</h3>
                 <p>通过 Excel 批量导入考勤记录。</p>
             </a>
 
-            <a th:href="@{/student/list}" class="module-card">
+            <!-- 学生管理（仅 ADMIN 可见） -->
+            <a th:if="${userRole == 'ADMIN'}" th:href="@{/student/list}" class="module-card">
                 <div class="module-icon" style="background:#f0f9ff;color:var(--info);">👥</div>
                 <h3>学生管理</h3>
                 <p>查看、新增、编辑和导入学生信息。</p>

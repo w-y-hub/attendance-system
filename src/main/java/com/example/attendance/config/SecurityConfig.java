@@ -43,7 +43,7 @@ public class SecurityConfig {
                         // 公开路径（无需登录）
                         .requestMatchers("/login", "/register", "/css/**", "/js/**", "/image/**", "/webjars/**").permitAll()
                         // 管理员专用路径（需要 ADMIN 角色）
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**", "/student/**").hasRole("ADMIN")
                         // 其他所有请求需要登录（无需特定角色）
                         .anyRequest().authenticated()
                 )

@@ -16,7 +16,13 @@
 INSERT INTO users (username, password, role, enabled)
 VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN', true),
        ('teacher1', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEACHER', true),
+       ('chenkexin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'TEACHER', true),
        ('42211077', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'STUDENT', true);
+
+-- 2.5 插入定向越野教师（如果还没有）
+INSERT INTO teacher (user_id, name, title)
+SELECT id, '陈珂欣', '讲师' FROM users WHERE username = 'chenkexin'
+ON CONFLICT DO NOTHING;
 
 -- 3. 插入测试学生
 INSERT INTO student (student_no, name, gender, college, grade, major, class_name, status)
@@ -24,7 +30,8 @@ VALUES ('42211077', '孙涛涛', '男', '计算机与人工智能学院', '2022'
        ('42211078', '李小明', '男', '计算机与人工智能学院', '2022', '计算机科学与技术', '2022级计算机科学与技术', 1),
        ('42211079', '王小红', '女', '计算机与人工智能学院', '2022', '计算机科学与技术', '2022级计算机科学与技术', 1);
 
--- 4. 插入测试课程
+-- 4. 插入测试课程（含定向越野）
 INSERT INTO course (course_name, class_name, start_time, end_time)
 VALUES ('JavaEE开发实践', '2022级计算机科学与技术', '08:30:00', '10:00:00'),
-       ('数据库系统原理', '2022级计算机科学与技术', '10:15:00', '11:45:00');
+       ('数据库系统原理', '2022级计算机科学与技术', '10:15:00', '11:45:00'),
+       ('定向越野', '定向越野班', '14:00:00', '17:00:00');

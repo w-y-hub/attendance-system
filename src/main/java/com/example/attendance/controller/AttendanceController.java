@@ -139,14 +139,8 @@ public class AttendanceController {
 
         if (principal == null) return "redirect:/login";
 
-        // 角色检查：只有学生可以签到
-        String studentNo = principal.getName();
-        User loginUser = userService.findByUsername(studentNo);
-        if (loginUser != null && loginUser.getRole() != Role.STUDENT) {
-            return "redirect:/attendance/checkIn?error=" + encode("只有学生账号才能签到");
-        }
-
         // Controller 层：负责查数据
+        String studentNo = principal.getName();
         Student student = studentService.findByStudentNo(studentNo);
         Course course = courseService.findById(courseId);
 
